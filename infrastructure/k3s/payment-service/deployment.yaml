@@ -19,11 +19,14 @@ spec:
         app.kubernetes.io/part-of: ai-self-healing-lab
         experiment.component: payment
     spec:
+      imagePullSecrets:
+        # Required while GHCR packages are private. See order-service deployment notes.
+        - name: ghcr-pull
       containers:
         - name: payment-service
-          # Built by .github/workflows/publish-images.yml → GHCR
-          image: ghcr.io/mathiasgoulart/ai-self-healing-lab/payment-service:latest
-          imagePullPolicy: Always
+          # Tag is pinned in ../kustomization.yaml (sha-<commit>). Do not use :latest for experiments.
+          image: ghcr.io/mathiasgoulart/ai-self-healing-lab/payment-service
+          imagePullPolicy: IfNotPresent
           ports:
             - name: http
               containerPort: 3001
@@ -34,13 +37,13 @@ spec:
               value: info
           readinessProbe:
             httpGet:
-              path: /health
+              path: /health/ready
               port: http
             initialDelaySeconds: 3
             periodSeconds: 5
           livenessProbe:
             httpGet:
-              path: /health
+              path: /health/live
               port: http
             initialDelaySeconds: 10
             periodSeconds: 10

@@ -43,11 +43,19 @@ spec:
         prometheus.io/port: "3000"
         prometheus.io/path: /metrics
     spec:
+      imagePullSecrets:
+        # Required while GHCR packages are private. Create with:
+        #   kubectl -n ai-self-healing create secret docker-registry ghcr-pull \
+        #     --docker-server=ghcr.io \
+        #     --docker-username=<github-user> \
+        #     --docker-password=<PAT or gh auth token>
+        # Once packages are Public, this can be removed.
+        - name: ghcr-pull
       containers:
         - name: order-service
-          # Built by .github/workflows/publish-images.yml → GHCR
-          image: ghcr.io/mathiasgoulart/ai-self-healing-lab/order-service:latest
-          imagePullPolicy: Always
+          # Tag is pinned in ../kustomization.yaml (sha-<commit>). Do not use :latest for experiments.
+          image: ghcr.io/mathiasgoulart/ai-self-healing-lab/order-service
+          imagePullPolicy: IfNotPresent
           ports:
             - name: http
               containerPort: 3000

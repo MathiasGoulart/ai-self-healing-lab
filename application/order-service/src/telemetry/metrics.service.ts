@@ -126,11 +126,25 @@ export class MetricsService implements OnModuleInit {
   }
 
   onModuleInit(): void {
-    // Standard process/CPU/memory/event-loop metrics from prom-client.
-    // No extra prefix so names stay conventional (process_*, nodejs_*).
+    // Standard process/CPU/memory/GC metrics from prom-client.
+    // Intentionally omit eventLoopLag gauges (incl. in-process p50/p90/p99):
+    // nodejs_eventloop_delay_seconds Histogram is the canonical event-loop metric;
+    // percentiles are computed in Prometheus via histogram_quantile.
     collectDefaultMetrics({
       register: this.registry,
     });
+    for (const name of [
+      'nodejs_eventloop_lag_seconds',
+      'nodejs_eventloop_lag_min_seconds',
+      'nodejs_eventloop_lag_max_seconds',
+      'nodejs_eventloop_lag_mean_seconds',
+      'nodejs_eventloop_lag_stddev_seconds',
+      'nodejs_eventloop_lag_p50_seconds',
+      'nodejs_eventloop_lag_p90_seconds',
+      'nodejs_eventloop_lag_p99_seconds',
+    ]) {
+      this.registry.removeSingleMetric(name);
+    }
 
     this.registry.setDefaultLabels({ service: 'order-service' });
 

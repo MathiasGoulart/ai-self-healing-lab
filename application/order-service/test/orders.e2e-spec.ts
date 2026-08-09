@@ -31,6 +31,8 @@ describe('Orders API (e2e)', () => {
     const paymentApp = express();
     paymentApp.use(express.json());
     paymentApp.get('/health', (_req, res) => res.json({ status: 'ok' }));
+    paymentApp.get('/health/live', (_req, res) => res.json({ status: 'ok' }));
+    paymentApp.get('/health/ready', (_req, res) => res.json({ status: 'ok' }));
     paymentApp.post('/payments', (req, res) => {
       if (paymentShouldFail) {
         res.status(502).json({ message: 'injected payment failure' });
@@ -162,21 +164,35 @@ describe('Orders API (e2e)', () => {
       expect(response.body.status).toBe('ok');
     });
 
-    it('exposes prometheus metrics', async () => {
-      const response = await request(app.getHttpServer()).get('/metrics').expect(200);
-      expect(response.text).toContain('http_requests_total');
-      expect(response.text).toContain('http_request_duration_seconds');
-      expect(response.text).toContain('orders_created_total');
-      expect(response.text).toContain('orders_processing_total');
-      expect(response.text).toContain('payment_requests_total');
-      expect(response.text).toContain('payment_request_duration_seconds');
-      expect(response.text).toContain('database_pool_active_connections');
-      expect(response.text).toContain('database_pool_idle_connections');
-      expect(response.text).toContain('database_pool_waiting_requests');
-      expect(response.text).toContain('nodejs_eventloop_delay_seconds');
-      expect(response.text).toContain('process_cpu_seconds_total');
-      expect(response.text).toContain('process_resident_memory_bytes');
-      expect(response.text).toContain('nodejs_heap_size_used_bytes');
+    it('exposes prometheus metrics without health-probe contamination', async () => {
+      await request(app.getHttpServer()).get('/health/live').expect(200);
+      await request(app.getHttpServer()).get('/health/ready').expect(200);
+
+      const before = await request(app.getHttpServer()).get('/metrics').expect(200);
+      expect(before.text).toContain('http_requests_total');
+      expect(before.text).toContain('http_request_duration_seconds');
+      expect(before.text).toContain('orders_created_total');
+      expect(before.text).toContain('orders_processing_total');
+      expect(before.text).toContain('payment_requests_total');
+      expect(before.text).toContain('payment_request_duration_seconds');
+      expect(before.text).toContain('database_pool_active_connections');
+      expect(before.text).toContain('database_pool_idle_connections');
+      expect(before.text).toContain('database_pool_waiting_requests');
+      expect(before.text).toContain('nodejs_eventloop_delay_seconds');
+      expect(before.text).toContain('process_cpu_seconds_total');
+      expect(before.text).toContain('process_resident_memory_bytes');
+      expect(before.text).toContain('nodejs_heap_size_used_bytes');
+      expect(before.text).not.toContain('nodejs_eventloop_lag_p50_seconds');
+      expect(before.text).not.toContain('nodejs_eventloop_lag_p99_seconds');
+      expect(before.text).not.toMatch(/http_requests_total\{[^}]*route="\/health/);
+
+      await request(app.getHttpServer())
+        .post('/orders')
+        .send({ productId: 'product-metrics', quantity: 1 })
+        .expect(201);
+
+      const after = await request(app.getHttpServer()).get('/metrics').expect(200);
+      expect(after.text).toMatch(/http_requests_total\{method="POST",route="\/orders"/);
     });
   });
 });

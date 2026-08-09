@@ -6,6 +6,7 @@ import {
   PaymentInput,
   PaymentResult,
 } from './fault-hooks';
+import { PaymentMetrics } from './metrics';
 
 const PORT = parseInt(process.env.PORT ?? '3001', 10);
 const LOG_LEVEL = process.env.LOG_LEVEL ?? 'info';
@@ -25,8 +26,24 @@ function log(level: string, event: string, fields: Record<string, unknown> = {})
   );
 }
 
+function isExcludedFromWorkloadMetrics(path: string): boolean {
+  return (
+    path === '/metrics' ||
+    path === '/health' ||
+    path.startsWith('/health/')
+  );
+}
+
+function normalizeRoute(path: string): string {
+  if (path === '/payments') {
+    return '/payments';
+  }
+  return path;
+}
+
 export function createApp(hooks: FaultInjectionHooks = noopFaultHooks): express.Express {
   const app = express();
+  const metrics = new PaymentMetrics();
   app.use(express.json());
 
   app.use((req: Request, res: Response, next: NextFunction) => {
@@ -39,6 +56,47 @@ export function createApp(hooks: FaultInjectionHooks = noopFaultHooks): express.
     next();
   });
 
+  // Workload HTTP metrics (excludes /health* and /metrics)
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    if (isExcludedFromWorkloadMetrics(req.path)) {
+      next();
+      return;
+    }
+
+    const method = req.method;
+    const route = normalizeRoute(req.path);
+    const endTimer = metrics.httpRequestDuration.startTimer();
+    metrics.httpActiveRequests.inc();
+
+    res.on('finish', () => {
+      const statusCode = String(res.statusCode);
+      const labels = { method, route, status_code: statusCode };
+      metrics.httpRequestsTotal.inc(labels);
+      endTimer(labels);
+      if (res.statusCode >= 400) {
+        metrics.httpErrorsTotal.inc(labels);
+      }
+      metrics.httpActiveRequests.dec();
+    });
+
+    next();
+  });
+
+  app.get('/metrics', async (_req, res) => {
+    res.setHeader('Content-Type', metrics.contentType());
+    res.setHeader('Cache-Control', 'no-store');
+    res.send(await metrics.metricsText());
+  });
+
+  app.get('/health/live', (_req, res) => {
+    res.json({ status: 'ok' });
+  });
+
+  app.get('/health/ready', (_req, res) => {
+    res.json({ status: 'ok' });
+  });
+
+  /** Backward-compatible alias used by older clients. */
   app.get('/health', (_req, res) => {
     res.json({ status: 'ok' });
   });
@@ -53,6 +111,7 @@ export function createApp(hooks: FaultInjectionHooks = noopFaultHooks): express.
 
     if (!body.orderId || !body.productId || typeof body.quantity !== 'number') {
       log('warn', 'payment_invalid_request', { requestId, body });
+      metrics.paymentRequestsTotal.inc({ result: 'failure' });
       res.status(400).json({
         message: 'orderId, productId, and quantity are required',
       });
@@ -72,6 +131,7 @@ export function createApp(hooks: FaultInjectionHooks = noopFaultHooks): express.
       if (fail) {
         const message = fail instanceof Error ? fail.message : 'Injected payment failure';
         log('error', 'payment_failed', { requestId, orderId: input.orderId, error: message });
+        metrics.paymentRequestsTotal.inc({ result: 'failure' });
         res.status(502).json({ message });
         return;
       }
@@ -83,6 +143,7 @@ export function createApp(hooks: FaultInjectionHooks = noopFaultHooks): express.
 
       await hooks.afterPayment?.(input, result);
 
+      metrics.paymentRequestsTotal.inc({ result: 'success' });
       log('info', 'payment_completed', {
         requestId,
         orderId: input.orderId,
@@ -94,6 +155,7 @@ export function createApp(hooks: FaultInjectionHooks = noopFaultHooks): express.
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown payment error';
       log('error', 'payment_failed', { requestId, orderId: input.orderId, error: message });
+      metrics.paymentRequestsTotal.inc({ result: 'failure' });
       res.status(500).json({ message });
     }
   });
