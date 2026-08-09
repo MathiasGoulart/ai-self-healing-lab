@@ -1,0 +1,21 @@
+node_modules/
+dist/
+coverage/
+.env
+*.log
+.DS_Store
+.idea/
+.vscode/
+*.tsbuildinfo
+
+# Application build artifacts
+application/order-service/node_modules/
+application/order-service/dist/
+application/order-service/coverage/
+application/order-service/payment-service/node_modules/
+application/order-service/payment-service/dist/
+application/order-service/.env
+
+# Experiment / analysis outputs (future phases)
+experiments/**/results/
+analysis/**/output/
