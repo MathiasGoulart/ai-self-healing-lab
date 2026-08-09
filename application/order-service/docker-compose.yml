@@ -1,0 +1,60 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: orders
+      POSTGRES_PASSWORD: orders
+      POSTGRES_DB: orders
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orders -d orders"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  payment-service:
+    build:
+      context: ./payment-service
+    environment:
+      PORT: 3001
+      LOG_LEVEL: info
+    ports:
+      - "3001:3001"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3001/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  order-service:
+    build:
+      context: .
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgres://orders:orders@postgres:5432/orders
+      PAYMENT_SERVICE_URL: http://payment-service:3001
+      LOG_LEVEL: info
+      OTEL_SERVICE_NAME: order-service
+      # Empty endpoint => ConsoleSpanExporter (stdout). Set to an OTLP collector in later phases.
+      OTEL_EXPORTER_OTLP_ENDPOINT: ""
+      SEED_ON_STARTUP: "true"
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      payment-service:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

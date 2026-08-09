@@ -1,0 +1,21 @@
+{
+  "name": "payment-service",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Mock payment service designed for future fault injection",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/main.js",
+    "start:dev": "ts-node src/main.ts"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.1",
+    "@types/node": "^22.13.14",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2"
+  }
+}

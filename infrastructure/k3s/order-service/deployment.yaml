@@ -1,0 +1,100 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: order-service-config
+  namespace: ai-self-healing
+  labels:
+    app.kubernetes.io/name: order-service
+    app.kubernetes.io/part-of: ai-self-healing-lab
+data:
+  PORT: "3000"
+  LOG_LEVEL: info
+  PAYMENT_SERVICE_URL: http://payment-service:3001
+  OTEL_SERVICE_NAME: order-service
+  # Empty => console span exporter (no collector required in Phase 1.5)
+  OTEL_EXPORTER_OTLP_ENDPOINT: ""
+  SEED_ON_STARTUP: "true"
+  # Schema is created by postgres init ConfigMap; keep sync off in cluster.
+  TYPEORM_SYNC: "false"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  namespace: ai-self-healing
+  labels:
+    app.kubernetes.io/name: order-service
+    app.kubernetes.io/part-of: ai-self-healing-lab
+    experiment.component: application
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: order-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: order-service
+        app.kubernetes.io/part-of: ai-self-healing-lab
+        experiment.component: application
+      annotations:
+        # Hint for an existing Prometheus scrape config (optional).
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3000"
+        prometheus.io/path: /metrics
+    spec:
+      containers:
+        - name: order-service
+          # Built by .github/workflows/publish-images.yml → GHCR
+          image: ghcr.io/mathiasgoulart/ai-self-healing-lab/order-service:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: order-service-config
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: DATABASE_URL
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          resources:
+            # Modest home-lab defaults; also useful for future saturation experiments.
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+  namespace: ai-self-healing
+  labels:
+    app.kubernetes.io/name: order-service
+    app.kubernetes.io/part-of: ai-self-healing-lab
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: order-service
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http
