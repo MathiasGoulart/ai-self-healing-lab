@@ -9,6 +9,9 @@ import { catchError, finalize, tap } from 'rxjs/operators';
 import { Request, Response } from 'express';
 import { MetricsService } from './metrics.service';
 
+/** Paths excluded from experimental HTTP workload metrics (probes + scrape). */
+const EXCLUDED_PATH_PREFIXES = ['/health', '/metrics'];
+
 @Injectable()
 export class HttpMetricsInterceptor implements NestInterceptor {
   constructor(private readonly metrics: MetricsService) {}
@@ -22,7 +25,7 @@ export class HttpMetricsInterceptor implements NestInterceptor {
     const request = http.getRequest<Request>();
     const response = http.getResponse<Response>();
 
-    if (request.path === '/metrics') {
+    if (this.isExcluded(request.path)) {
       return next.handle();
     }
 
@@ -48,6 +51,12 @@ export class HttpMetricsInterceptor implements NestInterceptor {
       finalize(() => {
         this.metrics.httpActiveRequests.dec();
       }),
+    );
+  }
+
+  private isExcluded(path: string): boolean {
+    return EXCLUDED_PATH_PREFIXES.some(
+      (prefix) => path === prefix || path.startsWith(`${prefix}/`),
     );
   }
 

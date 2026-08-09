@@ -32,7 +32,7 @@ export class HealthController {
       () => this.db.pingCheck('database'),
       async () => {
         const baseUrl = this.config.get<string>('app.paymentServiceUrl', 'http://localhost:3001');
-        const response = await fetch(`${baseUrl}/health`, {
+        const response = await fetch(`${baseUrl}/health/ready`, {
           signal: AbortSignal.timeout(3000),
         });
         if (!response.ok) {

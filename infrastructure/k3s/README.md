@@ -8,6 +8,7 @@ Deploy the Phase 1 Order Processing Service to the home **k3s** cluster for cont
 
 ```text
 infrastructure/k3s/
+├── kustomization.yaml          # ← pin sha-<commit> image tags here
 ├── namespace.yaml
 ├── postgres/
 │   ├── configmap.yaml
@@ -27,6 +28,56 @@ order-service ──► postgres
       └──► payment-service
 ```
 
+## Image pinning (research reproducibility)
+
+Research runs **must** use commit-pinned container images:
+
+```text
+ghcr.io/mathiasgoulart/ai-self-healing-lab/order-service:sha-<commit>
+ghcr.io/mathiasgoulart/ai-self-healing-lab/payment-service:sha-<commit>
+```
+
+| Tag | Purpose |
+|-----|---------|
+| `sha-<commit>` | **Required for experiments** — immutable build of that git revision |
+| `latest` | Development convenience only — **do not** use for research runs |
+| `main` | Moving branch tip — **do not** use for research runs |
+
+CI continues to publish `latest` (and branch tags) for convenience. The k3s experiment manifests deliberately ignore those.
+
+**Single place to update the pin:** [`kustomization.yaml`](kustomization.yaml) → `images[].newTag`.
+
+Example after CI publishes commit `e48856b`:
+
+```yaml
+images:
+  - name: ghcr.io/mathiasgoulart/ai-self-healing-lab/order-service
+    newTag: sha-e48856b
+  - name: ghcr.io/mathiasgoulart/ai-self-healing-lab/payment-service
+    newTag: sha-e48856b
+```
+
+The short SHA matches GitHub Actions `docker/metadata-action` (`type=sha,prefix=sha-` → 7-character hash).
+
+Deploy with Kustomize (not raw `apply -f` on Deployments alone):
+
+```bash
+kubectl --context rooteny-kubernetes apply -k infrastructure/k3s
+```
+
+Verify the running tag:
+
+```bash
+kubectl --context rooteny-kubernetes -n ai-self-healing get deployment order-service \
+  -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
+kubectl --context rooteny-kubernetes -n ai-self-healing get deployment payment-service \
+  -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
+```
+
+Expected: `…:sha-<commit>`, never `:latest`.
+
+---
+
 ## Prerequisites
 
 - `kubectl` configured for the home k3s cluster (example context: `rooteny-kubernetes`)
@@ -40,11 +91,14 @@ kubectl --context rooteny-kubernetes get nodes
 
 Images are built by GitHub Actions and pushed to GHCR:
 
-| Workload | Image |
-|----------|-------|
-| order-service | `ghcr.io/mathiasgoulart/ai-self-healing-lab/order-service:latest` |
-| payment-service | `ghcr.io/mathiasgoulart/ai-self-healing-lab/payment-service:latest` |
-| postgres | `postgres:16-alpine` (Docker Hub) |
+| Workload | Image (experiment pin) |
+|----------|------------------------|
+| order-service | `ghcr.io/mathiasgoulart/ai-self-healing-lab/order-service:sha-<commit>` |
+| payment-service | `ghcr.io/mathiasgoulart/ai-self-healing-lab/payment-service:sha-<commit>` |
+| postgres | `postgres:16-alpine` (Docker Hub; not app code) |
+
+CI also publishes `:latest` for development; **k3s research manifests must not use it.**
+
 
 Workflow: [`.github/workflows/publish-images.yml`](../../.github/workflows/publish-images.yml)
 
@@ -59,7 +113,8 @@ Tags published:
 | PR #42 | `pr-42`, `sha-<commit>` |
 | merge/push to `main` | `latest`, `sha-<commit>`, `main` |
 
-`latest` is updated **only** on `main`. For a PR, point the Deployment at `:pr-<number>` to test before merge.
+`latest` is updated **only** on `main` (dev convenience). Research deployments must pin `sha-<commit>` via `kustomization.yaml`.
+
 
 Platform: `linux/amd64` (matches the lab’s Ubuntu k3s nodes).
 
@@ -75,22 +130,32 @@ Platform: `linux/amd64` (matches the lab’s Ubuntu k3s nodes).
    - **Package settings → Change visibility → Public**  
    - Repeat for `ai-self-healing-lab/payment-service`
 
-4. **No `imagePullSecret` needed** when both packages are Public. The cluster pulls anonymously from `ghcr.io`.
-
-Pin a reproducible build by changing the Deployment tag from `:latest` to `:sha-<gitsha>` (also published by the workflow).
-
-## 2. Deploy from GHCR
-
-After the packages are public and the workflow succeeded:
+4. **Pull access for the cluster**
+   - **Preferred:** make both packages **Public** → no `imagePullSecret` needed.
+   - **Until then** (current lab setup): create a pull secret and keep `imagePullSecrets: [ghcr-pull]` in the Deployments:
 
 ```bash
-kubectl --context rooteny-kubernetes apply -f infrastructure/k3s/payment-service/deployment.yaml
-kubectl --context rooteny-kubernetes apply -f infrastructure/k3s/order-service/deployment.yaml
-kubectl --context rooteny-kubernetes -n ai-self-healing rollout restart deploy/payment-service deploy/order-service
-kubectl --context rooteny-kubernetes -n ai-self-healing get pods -o wide
+kubectl --context rooteny-kubernetes -n ai-self-healing create secret docker-registry ghcr-pull \
+  --docker-server=ghcr.io \
+  --docker-username=MathiasGoulart \
+  --docker-password="$(gh auth token)" \
+  --dry-run=client -o yaml | kubectl --context rooteny-kubernetes apply -f -
 ```
 
-Deployments use `imagePullPolicy: Always` for `:latest`.
+Use a classic PAT with `read:packages` if `gh auth token` lacks package scope on your machine.
+
+## 2. Deploy from GHCR (commit-pinned)
+
+1. Confirm CI published `sha-<commit>` for the revision under test.
+2. Set that tag in `infrastructure/k3s/kustomization.yaml` (`images[].newTag`).
+3. Apply the whole overlay:
+
+```bash
+kubectl --context rooteny-kubernetes apply -k infrastructure/k3s
+kubectl --context rooteny-kubernetes -n ai-self-healing rollout status deploy/payment-service
+kubectl --context rooteny-kubernetes -n ai-self-healing rollout status deploy/order-service
+kubectl --context rooteny-kubernetes -n ai-self-healing get pods -o wide
+```
 
 ---
 
@@ -124,21 +189,11 @@ Postgres uses `emptyDir` (ephemeral lab storage). Schema is applied from the `po
 
 ## 5. Deploy payment-service
 
-(Requires GHCR images — section 1–2.)
-
-```bash
-kubectl --context rooteny-kubernetes apply -f infrastructure/k3s/payment-service/deployment.yaml
-kubectl --context rooteny-kubernetes -n ai-self-healing rollout status deploy/payment-service
-```
-
-order-service reaches it at `http://payment-service:3001`.
+Included in `kubectl apply -k infrastructure/k3s` (section 2). order-service reaches it at `http://payment-service:3001`.
 
 ## 6. Deploy order-service
 
-```bash
-kubectl --context rooteny-kubernetes apply -f infrastructure/k3s/order-service/deployment.yaml
-kubectl --context rooteny-kubernetes -n ai-self-healing rollout status deploy/order-service
-```
+Included in `kubectl apply -k infrastructure/k3s` (section 2). Image tag must remain the `sha-<commit>` pin from `kustomization.yaml`.
 
 ### Resources (order-service)
 
