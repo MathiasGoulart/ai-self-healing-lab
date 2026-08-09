@@ -165,8 +165,18 @@ describe('Orders API (e2e)', () => {
     it('exposes prometheus metrics', async () => {
       const response = await request(app.getHttpServer()).get('/metrics').expect(200);
       expect(response.text).toContain('http_requests_total');
+      expect(response.text).toContain('http_request_duration_seconds');
       expect(response.text).toContain('orders_created_total');
-      expect(response.text).toContain('nodejs_');
+      expect(response.text).toContain('orders_processing_total');
+      expect(response.text).toContain('payment_requests_total');
+      expect(response.text).toContain('payment_request_duration_seconds');
+      expect(response.text).toContain('database_pool_active_connections');
+      expect(response.text).toContain('database_pool_idle_connections');
+      expect(response.text).toContain('database_pool_waiting_requests');
+      expect(response.text).toContain('nodejs_eventloop_delay_seconds');
+      expect(response.text).toContain('process_cpu_seconds_total');
+      expect(response.text).toContain('process_resident_memory_bytes');
+      expect(response.text).toContain('nodejs_heap_size_used_bytes');
     });
   });
 });

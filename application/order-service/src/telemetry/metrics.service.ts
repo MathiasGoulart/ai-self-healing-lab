@@ -7,7 +7,15 @@ import {
   Registry,
 } from 'prom-client';
 import { DataSource } from 'typeorm';
+import { monitorEventLoopDelay } from 'perf_hooks';
 
+/**
+ * Research telemetry for Phase 1.5.
+ *
+ * Histogram buckets are sized for backend API latencies (ms → multi-second).
+ * Percentiles (p50/p95/p99) must be computed by Prometheus from these buckets —
+ * the application does not pre-calculate them.
+ */
 @Injectable()
 export class MetricsService implements OnModuleInit {
   readonly registry = new Registry();
@@ -17,14 +25,16 @@ export class MetricsService implements OnModuleInit {
   readonly httpErrorsTotal: Counter<string>;
   readonly httpActiveRequests: Gauge<string>;
   readonly ordersCreated: Counter<string>;
-  readonly ordersProcessedSuccess: Counter<string>;
-  readonly ordersProcessedFailure: Counter<string>;
+  readonly ordersProcessingTotal: Counter<string>;
   readonly orderProcessingDuration: Histogram<string>;
+  readonly paymentRequestsTotal: Counter<string>;
   readonly paymentRequestDuration: Histogram<string>;
-  readonly paymentErrors: Counter<string>;
-  readonly pgPoolTotal: Gauge<string>;
-  readonly pgPoolIdle: Gauge<string>;
-  readonly pgPoolWaiting: Gauge<string>;
+  readonly databasePoolActiveConnections: Gauge<string>;
+  readonly databasePoolIdleConnections: Gauge<string>;
+  readonly databasePoolWaitingRequests: Gauge<string>;
+  readonly eventLoopDelaySeconds: Histogram<string>;
+
+  private readonly eventLoopMonitor = monitorEventLoopDelay({ resolution: 20 });
 
   constructor(private readonly dataSource: DataSource) {
     this.httpRequestsTotal = new Counter({
@@ -61,15 +71,10 @@ export class MetricsService implements OnModuleInit {
       registers: [this.registry],
     });
 
-    this.ordersProcessedSuccess = new Counter({
-      name: 'orders_processed_success_total',
-      help: 'Total number of orders processed successfully',
-      registers: [this.registry],
-    });
-
-    this.ordersProcessedFailure = new Counter({
-      name: 'orders_processed_failure_total',
-      help: 'Total number of orders that failed during processing',
+    this.ordersProcessingTotal = new Counter({
+      name: 'orders_processing_total',
+      help: 'Total number of order processing attempts by result',
+      labelNames: ['result'],
       registers: [this.registry],
     });
 
@@ -80,48 +85,60 @@ export class MetricsService implements OnModuleInit {
       registers: [this.registry],
     });
 
+    this.paymentRequestsTotal = new Counter({
+      name: 'payment_requests_total',
+      help: 'Total number of payment service requests by result',
+      labelNames: ['result'],
+      registers: [this.registry],
+    });
+
     this.paymentRequestDuration = new Histogram({
       name: 'payment_request_duration_seconds',
       help: 'Duration of payment service requests in seconds',
-      buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5],
+      buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
       registers: [this.registry],
     });
 
-    this.paymentErrors = new Counter({
-      name: 'payment_errors_total',
-      help: 'Total number of payment errors',
-      labelNames: ['error_type'],
+    this.databasePoolActiveConnections = new Gauge({
+      name: 'database_pool_active_connections',
+      help: 'Active (checked-out) connections in the PostgreSQL pool',
       registers: [this.registry],
     });
 
-    this.pgPoolTotal = new Gauge({
-      name: 'pg_pool_total_connections',
-      help: 'Total connections in the PostgreSQL pool',
-      registers: [this.registry],
-    });
-
-    this.pgPoolIdle = new Gauge({
-      name: 'pg_pool_idle_connections',
+    this.databasePoolIdleConnections = new Gauge({
+      name: 'database_pool_idle_connections',
       help: 'Idle connections in the PostgreSQL pool',
       registers: [this.registry],
     });
 
-    this.pgPoolWaiting = new Gauge({
-      name: 'pg_pool_waiting_clients',
-      help: 'Clients waiting for a PostgreSQL pool connection',
+    this.databasePoolWaitingRequests = new Gauge({
+      name: 'database_pool_waiting_requests',
+      help: 'Requests waiting for a PostgreSQL pool connection',
+      registers: [this.registry],
+    });
+
+    this.eventLoopDelaySeconds = new Histogram({
+      name: 'nodejs_eventloop_delay_seconds',
+      help: 'Node.js event loop delay sampled via perf_hooks.monitorEventLoopDelay',
+      buckets: [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2],
       registers: [this.registry],
     });
   }
 
   onModuleInit(): void {
+    // Standard process/CPU/memory/event-loop metrics from prom-client.
+    // No extra prefix so names stay conventional (process_*, nodejs_*).
     collectDefaultMetrics({
       register: this.registry,
-      prefix: 'nodejs_',
     });
 
     this.registry.setDefaultLabels({ service: 'order-service' });
 
-    setInterval(() => this.collectPoolMetrics(), 5000).unref();
+    this.eventLoopMonitor.enable();
+    setInterval(() => {
+      this.collectPoolMetrics();
+      this.collectEventLoopDelay();
+    }, 5000).unref();
   }
 
   private collectPoolMetrics(): void {
@@ -132,13 +149,26 @@ export class MetricsService implements OnModuleInit {
     if (!pool) {
       return;
     }
-    this.pgPoolTotal.set(pool.totalCount ?? 0);
-    this.pgPoolIdle.set(pool.idleCount ?? 0);
-    this.pgPoolWaiting.set(pool.waitingCount ?? 0);
+    const total = pool.totalCount ?? 0;
+    const idle = pool.idleCount ?? 0;
+    const waiting = pool.waitingCount ?? 0;
+    this.databasePoolActiveConnections.set(Math.max(total - idle, 0));
+    this.databasePoolIdleConnections.set(idle);
+    this.databasePoolWaitingRequests.set(waiting);
+  }
+
+  private collectEventLoopDelay(): void {
+    // mean is in nanoseconds
+    const meanSeconds = this.eventLoopMonitor.mean / 1e9;
+    if (Number.isFinite(meanSeconds) && meanSeconds >= 0) {
+      this.eventLoopDelaySeconds.observe(meanSeconds);
+    }
+    this.eventLoopMonitor.reset();
   }
 
   async getMetrics(): Promise<string> {
     this.collectPoolMetrics();
+    this.collectEventLoopDelay();
     return this.registry.metrics();
   }
 

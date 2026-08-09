@@ -42,7 +42,7 @@ export class PaymentClient {
         });
 
         if (!response.ok) {
-          this.metrics.paymentErrors.inc({ error_type: 'http_error' });
+          this.metrics.paymentRequestsTotal.inc({ result: 'error' });
           const body = await response.text();
           throw new PaymentError(
             `Payment service responded with ${response.status}: ${body || response.statusText}`,
@@ -51,16 +51,17 @@ export class PaymentClient {
 
         const data = (await response.json()) as PaymentResponse;
         if (data.status !== 'APPROVED') {
-          this.metrics.paymentErrors.inc({ error_type: 'declined' });
+          this.metrics.paymentRequestsTotal.inc({ result: 'declined' });
           throw new PaymentError(`Payment declined with status ${data.status}`);
         }
 
+        this.metrics.paymentRequestsTotal.inc({ result: 'success' });
         span.setAttribute('payment.id', data.paymentId);
         span.setAttribute('payment.status', data.status);
         return data;
       } catch (error) {
         if (!(error instanceof PaymentError)) {
-          this.metrics.paymentErrors.inc({ error_type: 'network_error' });
+          this.metrics.paymentRequestsTotal.inc({ result: 'error' });
         }
         span.recordException(error as Error);
         throw error;

@@ -1,7 +1,15 @@
-# Infrastructure (Phase 2+)
+# Infrastructure
 
-Placeholder for deployment and shared infrastructure (for example Kubernetes/k3s manifests, cluster bootstrap, and shared observability backends).
+Kubernetes / k3s manifests and related deployment material for the research lab.
 
-Phase 1 runs locally via Docker Compose inside `application/order-service/`.
+## Current (Phase 1.5)
 
-No implementation in Phase 1.
+```text
+infrastructure/k3s/
+```
+
+See [`k3s/README.md`](k3s/README.md) to deploy the Order Processing Service to the home k3s cluster.
+
+## Later phases
+
+Additional directories (fault injection wiring, shared observability backends as experiment dependencies, etc.) may appear here. Do not confuse this tree with application source under `application/order-service/`.

@@ -16,6 +16,10 @@ application/order-service/payment-service/node_modules/
 application/order-service/payment-service/dist/
 application/order-service/.env
 
+# k3s secrets (never commit real credentials)
+infrastructure/k3s/**/secret.yaml
+infrastructure/k3s/**/*-secret.yaml
+
 # Experiment / analysis outputs (future phases)
 experiments/**/results/
 analysis/**/output/

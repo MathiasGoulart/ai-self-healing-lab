@@ -29,14 +29,25 @@ This repository is a **scientific instrument**, not a product. It compares two a
 
 ## Phase 1 — Experimental backend
 
-The only implemented component in Phase 1 is the Order Processing Service:
+The Order Processing Service:
 
 ```bash
 cd application/order-service
 docker compose up --build
 ```
 
-See [`application/order-service/README.md`](application/order-service/README.md) for API, metrics, telemetry, and tests.
+See [`application/order-service/README.md`](application/order-service/README.md).
+
+## Phase 1.5 — k3s + research metrics
+
+Deploy the same application to the home k3s cluster and scrape Prometheus-compatible research metrics:
+
+```bash
+# See full steps (build images, import to k3s, apply manifests)
+cat infrastructure/k3s/README.md
+```
+
+Telemetry model: [`docs/observability.md`](docs/observability.md).
 
 ---
 
@@ -51,7 +62,8 @@ See [`application/order-service/README.md`](application/order-service/README.md)
 
 ## Future experimental phases
 
-* **Phase 2** — Kubernetes/k3s deployment and fault injection
+* **Phase 1.5** — k3s deployment and research metrics baseline *(current)*
+* **Phase 2** — Fault injection
 * **Phase 3** — Embedded AI
 * **Phase 4** — External AI Agent
 * **Phase 5** — Controlled comparative experiments

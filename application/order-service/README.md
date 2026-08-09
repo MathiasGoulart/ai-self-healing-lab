@@ -113,22 +113,27 @@ DATABASE_URL=postgres://orders:orders@localhost:5432/orders npm run test:e2e
 
 ## Metrics
 
-Exposed at `GET /metrics`:
+Exposed at `GET /metrics` (research baseline — see [`docs/observability.md`](../../docs/observability.md)):
 
 | Metric | Description |
 |--------|-------------|
-| `http_requests_total` | HTTP request count (`method`, `route`, `status_code`) |
-| `http_request_duration_seconds` | HTTP request duration |
+| `http_requests_total` | Throughput / error rate (`method`, `route`, `status_code`) |
+| `http_request_duration_seconds` | HTTP latency histogram (p50/p95/p99 via Prometheus) |
 | `http_errors_total` | HTTP errors (status ≥ 400) |
 | `http_active_requests` | In-flight HTTP requests |
-| `nodejs_*` | Process CPU, memory, event-loop defaults |
-| `pg_pool_*` | PostgreSQL pool usage |
-| `order_processing_duration_seconds` | Order processing duration |
-| `payment_request_duration_seconds` | Payment call duration |
-| `payment_errors_total` | Payment errors |
+| `process_cpu_seconds_total` | Process CPU (use `rate()`) |
+| `process_resident_memory_bytes` | RSS |
+| `nodejs_heap_size_used_bytes` / `_total_bytes` | V8 heap |
+| `nodejs_eventloop_delay_seconds` | Event-loop delay histogram (`perf_hooks`) |
+| `nodejs_eventloop_lag_*` | Event-loop lag from prom-client defaults |
+| `database_pool_active_connections` | Active DB pool connections |
+| `database_pool_idle_connections` | Idle DB pool connections |
+| `database_pool_waiting_requests` | Waiting DB pool clients |
+| `order_processing_duration_seconds` | Order processing latency |
 | `orders_created_total` | Orders created |
-| `orders_processed_success_total` | Successful processing |
-| `orders_processed_failure_total` | Failed processing |
+| `orders_processing_total` | Processing results (`result=success\|failure`) |
+| `payment_request_duration_seconds` | Payment latency histogram |
+| `payment_requests_total` | Payment results (`result=success\|error\|declined`) |
 
 ---
 

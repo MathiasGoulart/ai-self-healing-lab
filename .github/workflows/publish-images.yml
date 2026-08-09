@@ -1,0 +1,76 @@
+name: Publish container images
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "application/order-service/**"
+      - ".github/workflows/publish-images.yml"
+  push:
+    branches: [main]
+    paths:
+      - "application/order-service/**"
+      - ".github/workflows/publish-images.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  # GHCR names are lowercase
+  IMAGE_OWNER: mathiasgoulart
+  IMAGE_PREFIX: ai-self-healing-lab
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: order-service
+            context: application/order-service
+            dockerfile: application/order-service/Dockerfile
+          - name: payment-service
+            context: application/order-service/payment-service
+            dockerfile: application/order-service/payment-service/Dockerfile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/${{ env.IMAGE_PREFIX }}/${{ matrix.name }}
+          tags: |
+            # Production tag only after merge to main
+            type=raw,value=latest,enable={{is_default_branch}}
+            # PR builds: pr-123 (usable for cluster testing before merge)
+            type=ref,event=pr
+            type=sha,prefix=sha-
+            type=ref,event=branch
+
+      - name: Build and push (${{ matrix.name }})
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

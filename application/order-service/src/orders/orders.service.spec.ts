@@ -24,8 +24,7 @@ describe('OrdersService', () => {
 
   const metrics = {
     ordersCreated: { inc: jest.fn() },
-    ordersProcessedSuccess: { inc: jest.fn() },
-    ordersProcessedFailure: { inc: jest.fn() },
+    ordersProcessingTotal: { inc: jest.fn() },
     orderProcessingDuration: { startTimer: jest.fn(() => jest.fn()) },
   };
 
@@ -110,7 +109,7 @@ describe('OrdersService', () => {
 
       expect(result.status).toBe(OrderStatus.PAID);
       expect(result.paymentId).toBe('payment-123');
-      expect(metrics.ordersProcessedSuccess.inc).toHaveBeenCalled();
+      expect(metrics.ordersProcessingTotal.inc).toHaveBeenCalledWith({ result: 'success' });
       expect(logger.info).toHaveBeenCalledWith(
         expect.objectContaining({ event: 'order_processing_completed' }),
         expect.any(String),
@@ -123,7 +122,7 @@ describe('OrdersService', () => {
       paymentClient.charge.mockRejectedValue(new PaymentError('payment declined'));
 
       await expect(service.process(pendingOrder.id)).rejects.toBeInstanceOf(PaymentError);
-      expect(metrics.ordersProcessedFailure.inc).toHaveBeenCalled();
+      expect(metrics.ordersProcessingTotal.inc).toHaveBeenCalledWith({ result: 'failure' });
       expect(logger.error).toHaveBeenCalledWith(
         expect.objectContaining({ event: 'order_processing_failed' }),
         expect.any(String),

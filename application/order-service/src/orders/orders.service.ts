@@ -111,7 +111,7 @@ export class OrdersService {
         order.paymentId = payment.paymentId;
         const paid = await this.ordersRepository.save(order);
 
-        this.metrics.ordersProcessedSuccess.inc();
+        this.metrics.ordersProcessingTotal.inc({ result: 'success' });
         this.logger.info(
           {
             event: 'order_processing_completed',
@@ -138,7 +138,7 @@ export class OrdersService {
         order.status = OrderStatus.FAILED;
         const failed = await this.ordersRepository.save(order);
 
-        this.metrics.ordersProcessedFailure.inc();
+        this.metrics.ordersProcessingTotal.inc({ result: 'failure' });
         this.logger.error(
           {
             event: 'order_processing_failed',
