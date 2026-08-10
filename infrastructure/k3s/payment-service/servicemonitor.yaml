@@ -1,0 +1,21 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: payment-service
+  namespace: ai-self-healing
+  labels:
+    app.kubernetes.io/name: payment-service
+    app.kubernetes.io/part-of: ai-self-healing-lab
+    release: kube-prometheus
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: payment-service
+  namespaceSelector:
+    matchNames:
+      - ai-self-healing
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+      scrapeTimeout: 10s
