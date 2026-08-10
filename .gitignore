@@ -23,3 +23,7 @@ infrastructure/k3s/**/*-secret.yaml
 # Experiment / analysis outputs (future phases)
 experiments/**/results/
 analysis/**/output/
+
+# k6 optional shared drop zone (keep .gitkeep)
+load-testing/reports/*
+!load-testing/reports/.gitkeep
