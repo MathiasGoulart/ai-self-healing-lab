@@ -1,5 +1,10 @@
-# Experiments (Phase 5)
+# Experiments
 
-Placeholder for experiment definitions, run configurations, and collected artifacts used in controlled comparative studies.
+Experiment definitions and (later) run artifacts for controlled studies.
 
-No implementation in Phase 1.
+| ID | Name | Status |
+|----|------|--------|
+| [E000](../load-testing/experiments/E000/) | Baseline (no fault) | Exploratory run artifact under `load-testing/` |
+| [E001](./E001/) | Payment Latency — Medium (F01) | **Defined only** — formal run not executed |
+
+See [`../research/experimental-protocol.md`](../research/experimental-protocol.md).

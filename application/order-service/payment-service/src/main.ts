@@ -1,17 +1,23 @@
 import { randomUUID } from 'crypto';
 import express, { NextFunction, Request, Response } from 'express';
+import { FaultController, sleep } from './fault-controller';
 import {
   FaultInjectionHooks,
   noopFaultHooks,
   PaymentInput,
   PaymentResult,
 } from './fault-hooks';
+import { isFaultSeverity, isFaultType } from './fault-types';
 import { PaymentMetrics } from './metrics';
 
 const PORT = parseInt(process.env.PORT ?? '3001', 10);
 const LOG_LEVEL = process.env.LOG_LEVEL ?? 'info';
 
-function log(level: string, event: string, fields: Record<string, unknown> = {}): void {
+export function log(
+  level: string,
+  event: string,
+  fields: Record<string, unknown> = {},
+): void {
   if (level === 'debug' && LOG_LEVEL !== 'debug') {
     return;
   }
@@ -30,7 +36,9 @@ function isExcludedFromWorkloadMetrics(path: string): boolean {
   return (
     path === '/metrics' ||
     path === '/health' ||
-    path.startsWith('/health/')
+    path.startsWith('/health/') ||
+    path === '/faults' ||
+    path.startsWith('/faults/')
   );
 }
 
@@ -41,9 +49,52 @@ function normalizeRoute(path: string): string {
   return path;
 }
 
-export function createApp(hooks: FaultInjectionHooks = noopFaultHooks): express.Express {
+function hooksFromController(controller: FaultController): FaultInjectionHooks {
+  return {
+    async beforePayment(): Promise<void> {
+      const delayMs = controller.getPaymentLatencyMs();
+      if (delayMs > 0) {
+        await sleep(delayMs);
+      }
+    },
+    async afterPayment(): Promise<void> {
+      // reserved for future fault types
+    },
+    async shouldFail(): Promise<null> {
+      return null;
+    },
+  };
+}
+
+export interface CreateAppOptions {
+  /** Override hooks (tests). Default: hooks derived from FaultController. */
+  hooks?: FaultInjectionHooks;
+  metrics?: PaymentMetrics;
+  faultController?: FaultController;
+}
+
+export interface PaymentApp {
+  app: express.Express;
+  metrics: PaymentMetrics;
+  faultController: FaultController;
+}
+
+export function createApp(options: CreateAppOptions = {}): PaymentApp {
+  const metrics = options.metrics ?? new PaymentMetrics();
+  const faultController =
+    options.faultController ??
+    new FaultController(
+      {
+        setActive: (fault, severity, active) =>
+          metrics.setFaultActive(fault, severity, active),
+        recordLifecycle: (fault, severity, action) =>
+          metrics.recordFaultLifecycle(fault, severity, action),
+      },
+      log,
+    );
+  const hooks = options.hooks ?? hooksFromController(faultController);
+
   const app = express();
-  const metrics = new PaymentMetrics();
   app.use(express.json());
 
   app.use((req: Request, res: Response, next: NextFunction) => {
@@ -56,7 +107,7 @@ export function createApp(hooks: FaultInjectionHooks = noopFaultHooks): express.
     next();
   });
 
-  // Workload HTTP metrics (excludes /health* and /metrics)
+  // Workload HTTP metrics (excludes /health*, /metrics, /faults*)
   app.use((req: Request, res: Response, next: NextFunction) => {
     if (isExcludedFromWorkloadMetrics(req.path)) {
       next();
@@ -102,8 +153,52 @@ export function createApp(hooks: FaultInjectionHooks = noopFaultHooks): express.
   });
 
   /**
+   * Fault control API (experimental instrument).
+   * Cluster-internal only — no public Ingress.
+   */
+  app.get('/faults', (_req, res) => {
+    res.json({ faults: faultController.listStates() });
+  });
+
+  app.post('/faults', (req, res) => {
+    const body = req.body as { fault?: unknown; severity?: unknown };
+    if (!isFaultType(body.fault)) {
+      res.status(400).json({
+        message: 'Unsupported or missing fault. Supported: payment_latency',
+      });
+      return;
+    }
+    if (!isFaultSeverity(body.severity)) {
+      res.status(400).json({
+        message: 'Unsupported or missing severity. Supported: low, medium, high',
+      });
+      return;
+    }
+
+    const result = faultController.activate(body.fault, body.severity);
+    res.status(200).json(result);
+  });
+
+  app.delete('/faults/:fault', (req, res) => {
+    const faultParam = req.params.fault;
+    if (!isFaultType(faultParam)) {
+      res.status(404).json({
+        message: `Unknown fault: ${faultParam}`,
+      });
+      return;
+    }
+
+    const result = faultController.deactivate(faultParam);
+    if (result.status === 'not_active') {
+      res.status(404).json(result);
+      return;
+    }
+    res.status(200).json(result);
+  });
+
+  /**
    * POST /payments
-   * Happy-path mock payment. Fault injection hooks are intentional no-ops in Phase 1.
+   * Happy-path mock payment. F01 latency is applied via beforePayment when active.
    */
   app.post('/payments', async (req: Request, res: Response) => {
     const requestId = (req as Request & { requestId: string }).requestId;
@@ -160,12 +255,15 @@ export function createApp(hooks: FaultInjectionHooks = noopFaultHooks): express.
     }
   });
 
-  return app;
+  return { app, metrics, faultController };
 }
 
 if (require.main === module) {
-  const app = createApp();
+  const { app } = createApp();
   app.listen(PORT, () => {
     log('info', 'payment_service_started', { port: PORT });
   });
 }
+
+// Re-export for tests that still import createApp as Express factory helpers
+export { noopFaultHooks };

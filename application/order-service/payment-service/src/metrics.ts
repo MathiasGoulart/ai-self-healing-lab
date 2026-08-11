@@ -20,6 +20,8 @@ export class PaymentMetrics {
   readonly httpActiveRequests: Gauge<string>;
   readonly paymentRequestsTotal: Counter<string>;
   readonly eventLoopDelaySeconds: Histogram<string>;
+  readonly faultInjectionActive: Gauge<string>;
+  readonly faultInjectionsTotal: Counter<string>;
 
   private readonly eventLoopMonitor = monitorEventLoopDelay({ resolution: 20 });
 
@@ -28,14 +30,14 @@ export class PaymentMetrics {
 
     this.httpRequestsTotal = new Counter({
       name: 'http_requests_total',
-      help: 'Total number of HTTP workload requests (excludes health/metrics)',
+      help: 'Total number of HTTP workload requests (excludes health/metrics/faults)',
       labelNames: ['method', 'route', 'status_code'],
       registers: [this.registry],
     });
 
     this.httpRequestDuration = new Histogram({
       name: 'http_request_duration_seconds',
-      help: 'HTTP request duration in seconds (server-side; excludes health/metrics)',
+      help: 'HTTP request duration in seconds (server-side; excludes health/metrics/faults)',
       labelNames: ['method', 'route', 'status_code'],
       buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
       registers: [this.registry],
@@ -65,6 +67,20 @@ export class PaymentMetrics {
       name: 'nodejs_eventloop_delay_seconds',
       help: 'Node.js event loop delay sampled via perf_hooks.monitorEventLoopDelay',
       buckets: [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2],
+      registers: [this.registry],
+    });
+
+    this.faultInjectionActive = new Gauge({
+      name: 'fault_injection_active',
+      help: 'Whether a named experimental fault is currently active (1) or not (0)',
+      labelNames: ['fault', 'severity'],
+      registers: [this.registry],
+    });
+
+    this.faultInjectionsTotal = new Counter({
+      name: 'fault_injections_total',
+      help: 'Fault injection lifecycle events (activate / deactivate)',
+      labelNames: ['fault', 'severity', 'action'],
       registers: [this.registry],
     });
 
@@ -101,5 +117,24 @@ export class PaymentMetrics {
 
   contentType(): string {
     return this.registry.contentType;
+  }
+
+  setFaultActive(
+    fault: string,
+    severity: string | null,
+    active: boolean,
+  ): void {
+    if (!severity) {
+      return;
+    }
+    this.faultInjectionActive.set({ fault, severity }, active ? 1 : 0);
+  }
+
+  recordFaultLifecycle(
+    fault: string,
+    severity: string,
+    action: 'activate' | 'deactivate',
+  ): void {
+    this.faultInjectionsTotal.inc({ fault, severity, action });
   }
 }

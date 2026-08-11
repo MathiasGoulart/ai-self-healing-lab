@@ -76,7 +76,8 @@ cat load-testing/README.md
 ## Future experimental phases
 
 * **Baseline repeats** — E000-R1…R5; derive recovery envelopes
-* **Phase 2** — Fault injection
+* **Phase 2A** — Fault injection framework + F01 payment latency *(current)*
+* **Phase 2** — Remaining fault types (F02+)
 * **Phase 3** — Embedded AI
 * **Phase 4** — External AI Agent
 * **Phase 5** — Controlled comparative experiments
