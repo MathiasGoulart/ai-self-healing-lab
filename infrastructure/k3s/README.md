@@ -275,24 +275,30 @@ curl -s http://localhost:3000/metrics | grep -E \
 
 See [`docs/observability.md`](../../docs/observability.md) for PromQL examples.
 
-## Prometheus scrape (optional)
+## Prometheus scrape
 
-This phase does **not** deploy Prometheus. If kube-prometheus (or similar) already runs on the cluster, scrape:
+This lab’s `rooteny-kubernetes` cluster already runs **kube-prometheus-stack**, which discovers `ServiceMonitor` resources across namespaces.
 
-```text
-order-service.ai-self-healing.svc:3000/metrics
+Manifests:
+
+- `order-service/servicemonitor.yaml` → scrapes `order-service:3000/metrics`
+- `payment-service/servicemonitor.yaml` → scrapes `payment-service:3001/metrics`
+
+After `kubectl apply -k infrastructure/k3s`, check Status → Targets in Prometheus (or):
+
+```bash
+kubectl --context rooteny-kubernetes -n observability port-forward svc/kps-prometheus 9090:9090
+# open http://localhost:9090/targets and look for jobs containing order-service / payment-service
 ```
 
-Pod annotations are present (`prometheus.io/scrape=true`). Prefer a static scrape config over introducing a ServiceMonitor/operator dependency here.
+Example Grafana / PromQL (needs scrape + some workload traffic for `rate()` to be non-zero):
 
-Example scrape snippet:
-
-```yaml
-- job_name: order-service
-  static_configs:
-    - targets: ['order-service.ai-self-healing.svc.cluster.local:3000']
-  metrics_path: /metrics
+```promql
+sum(rate(http_requests_total{service="order-service"}[1m]))
+sum(rate(http_requests_total{service="payment-service"}[1m]))
 ```
+
+Pod annotations (`prometheus.io/*`) are informational only on this stack; **ServiceMonitors** are what actually enable scraping.
 
 ## Teardown
 

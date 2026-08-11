@@ -1,0 +1,223 @@
+# Experimental Protocol
+
+**Document type:** Experimental protocol  
+**Status:** Protocol defined; comparative AI experiments not yet executable
+
+---
+
+## Research objective
+
+Evaluate the effect of **AI architectural placement** (Embedded vs External) on self-healing effectiveness under controlled faults and identical workload.
+
+Primary comparison design:
+
+```text
+                 Embedded       External
+                 AI             Agent
+                 │              │
+Same fault ──────┼──────────────┼──────
+Same workload ───┼──────────────┼──────
+Same duration ───┼──────────────┼──────
+Same infra ──────┼──────────────┼──────
+Same app version ┼──────────────┼──────
+                 │              │
+                 ▼              ▼
+               Results
+```
+
+One approach per run (unless a separate interaction study is explicitly defined).
+
+---
+
+## Independent variable
+
+| Variable | Levels |
+|----------|--------|
+| AI architectural placement | Embedded · External |
+
+---
+
+## Controlled variables
+
+Must remain constant across paired Embedded/External comparisons:
+
+| Category | Controls |
+|----------|----------|
+| Software | Application source version; Order Service image; Payment Service image; DB version/config |
+| Platform | Kubernetes/k3s configuration; CPU/memory requests/limits; replica counts |
+| Workload | k6 scenario; rate; duration; VUs; request timeout |
+| Fault | Fault ID; severity; duration; parameters; target component |
+| Environment | Network path used for load generation; observability stack configuration |
+
+**Image metadata rule:** record immutable commit tags (`sha-*`) or digests. Never record only `latest`.
+
+---
+
+## Dependent variables
+
+See [`metrics.md`](metrics.md) and [`questions.md`](questions.md):
+
+- Detection: TTD  
+- Diagnosis: Root Cause Accuracy, FPR, FNR  
+- Recovery: TTR, Recovery Success Rate  
+- Application impact: throughput, HTTP percentiles, error rate, business-flow latency  
+- Overhead: CPU, memory, event-loop delay, GC behavior  
+
+---
+
+## Baseline family — E000 (no fault)
+
+### Purpose
+
+Characterize **normal** system behavior. One exploratory run is insufficient for the final statistical baseline.
+
+### Configuration (fixed across repetitions)
+
+| Field | Value |
+|-------|-------|
+| Experiment family | E000 |
+| Condition | No fault |
+| Workload | create → process (`load-testing/scenarios/baseline.js`) |
+| Arrival rate | 10 iterations/second |
+| Duration | 10 minutes |
+| Faults | None |
+
+### Required repetitions
+
+```text
+E000-R1
+E000-R2
+E000-R3
+E000-R4
+E000-R5
+```
+
+Identical configuration for every repetition. Do **not** change workload parameters between runs.
+
+An existing single E000 artifact may be treated as an exploratory run; the repeated series above is required before locking recovery envelopes.
+
+### Per-run recording checklist
+
+| Field | Required |
+|-------|----------|
+| Application (Order Service) image | yes (`sha-*` / digest) |
+| Payment Service image | yes |
+| k6 version | yes |
+| k6 configuration (RATE, DURATION, VUs, timeout, BASE_URL) | yes |
+| Start time (UTC) | yes |
+| End time (UTC) | yes |
+| Rate / duration | yes |
+| CPU | yes (Prometheus) |
+| Memory | yes |
+| HTTP latency (client + system as available) | yes |
+| Business-flow latency (k6) | yes |
+| Error rate | yes |
+| Database pool | yes |
+| Event-loop delay | yes |
+| Payment latency | yes |
+| Result locations (`summary.json`, HTML report, Grafana window) | yes |
+
+### Baseline statistics (analysis phase — not implemented here)
+
+For primary baseline metrics, eventually compute:
+
+```text
+mean, median, standard deviation,
+p50, p95, p99,
+minimum, maximum
+```
+
+Do **not** implement statistical analysis in this documentation phase.
+
+---
+
+## Fault injection metadata requirements
+
+Every injected fault run must record:
+
+```text
+experiment ID
+fault ID
+severity
+start timestamp
+end timestamp
+target component
+fault parameters
+```
+
+Example:
+
+```text
+Experiment: E001
+Fault: F01
+Target: payment-service
+Severity: medium
+Parameter: +2s latency
+Start: <UTC timestamp>
+End: <UTC timestamp>
+```
+
+These timestamps are mandatory inputs to TTD and TTR ([`metrics.md`](metrics.md)).
+
+Fault classes: [`fault-matrix.md`](fault-matrix.md).
+
+---
+
+## Comparative experiment repetitions
+
+Each fault × severity × placement cell uses repeated runs, e.g.:
+
+```text
+F01 / medium
+
+Embedded:  R1 R2 R3 R4 R5
+External:  R1 R2 R3 R4 R5
+```
+
+Do not draw conclusions from a single run. Exact repetition count may be adjusted after a future statistical power analysis (not implemented now).
+
+---
+
+## Observation perspectives
+
+| Perspective | Tool | Role |
+|-------------|------|------|
+| Client | k6 | External experience under the controlled workload |
+| System | Prometheus (+ logs/traces) | Internal behavior; required for the external agent |
+
+Grafana annotations (manual for now): `E000-Rn START` / `E000-Rn END`, and later `E00x START` / fault markers / `E00x END`.
+
+---
+
+## Preconditions for a valid comparative run (future)
+
+1. Order Service, Payment Service, and PostgreSQL healthy  
+2. Immutable image versions recorded  
+3. k6 workload identical to the paired counterpart  
+4. Fault injector configured with precise start/end timestamps  
+5. Exactly one AI placement active  
+6. Recovery criteria envelope published from baseline  
+7. Telemetry scrape healthy for the experiment window  
+
+---
+
+## Phased readiness (protocol view)
+
+| Phase | Protocol relevance |
+|-------|--------------------|
+| 1–1.6 | Subject + metrics + k6 harness + exploratory E000 |
+| Baseline repeats | E000-R1…R5; derive recovery envelope |
+| 2 | Fault injector with timestamped metadata |
+| 3–4 | Embedded / External MAPE-K implementations |
+| 5 | Paired comparative runs |
+| 6 | Statistical analysis |
+
+---
+
+## Related
+
+- Questions: [`questions.md`](questions.md)  
+- Hypotheses: [`hypotheses.md`](hypotheses.md)  
+- Recovery: [`recovery-criteria.md`](recovery-criteria.md)  
+- Fault matrix: [`fault-matrix.md`](fault-matrix.md)  
+- Self-healing metrics (future): [`self-healing-metrics.md`](self-healing-metrics.md)  

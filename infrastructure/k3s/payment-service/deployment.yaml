@@ -18,6 +18,10 @@ spec:
         app.kubernetes.io/name: payment-service
         app.kubernetes.io/part-of: ai-self-healing-lab
         experiment.component: payment
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3001"
+        prometheus.io/path: /metrics
     spec:
       imagePullSecrets:
         # Required while GHCR packages are private. See order-service deployment notes.

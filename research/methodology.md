@@ -1,51 +1,71 @@
 # Methodology
 
-## Overview
+**Document type:** Research methodology overview  
+**Canonical detail:** see the linked protocol documents below
 
-The research compares two AI placements against the same experimental backend and the same injected faults:
+---
+
+## Framing
+
+This project is an experimental evaluation of the effect of **AI architectural placement** on **self-healing effectiveness** in backend applications.
+
+It compares two MAPE-K placements under controlled faults and identical workload:
 
 | Approach | Description |
 |----------|-------------|
-| Embedded AI | AI capabilities integrated into the order-service process or its immediate runtime |
-| External AI Agent | order-service remains AI-free; an external agent consumes telemetry and reasons about anomalies |
+| **Embedded AI** | Monitor → Analyze → Plan → Execute inside the application |
+| **External AI Agent** | Application stays AI-free; external agent performs the loop over telemetry |
 
-A common experimental subject (`application/order-service`) and shared fault scenarios keep the comparison controlled.
+The evaluation covers the **full loop** (detection, diagnosis, recovery, overhead), not anomaly detection alone.
 
-## Experimental subject
+---
 
-The Phase 1 Order Processing Service provides:
+## Document map
 
-- Two primary flows: create order, process order
-- A mock payment dependency designed for later fault injection
-- Metrics, structured logs, and OpenTelemetry traces
+| Topic | Document |
+|-------|----------|
+| Research questions | [`questions.md`](questions.md) |
+| Hypotheses | [`hypotheses.md`](hypotheses.md) |
+| Metric definitions (TTD, TTR, …) | [`metrics.md`](metrics.md) |
+| Experimental protocol & baseline repeats | [`experimental-protocol.md`](experimental-protocol.md) |
+| Recovery criteria framework | [`recovery-criteria.md`](recovery-criteria.md) |
+| Candidate fault matrix | [`fault-matrix.md`](fault-matrix.md) |
+| Future self-healing metrics | [`self-healing-metrics.md`](self-healing-metrics.md) |
+| MAPE-K architecture | [`../docs/architecture.md`](../docs/architecture.md) |
+| Architectural comparison | [`../docs/architectural-comparison.md`](../docs/architectural-comparison.md) |
 
-No AI or self-healing logic is present in Phase 1.
+---
 
-## Controlled variables (planned)
+## Experimental subject (implemented)
 
-- Workload (request rate, mix of create/process)
-- Fault type and intensity (latency, error, timeout, intermittent)
-- Observation window and telemetry configuration
-- Recovery policy / agent configuration (Phases 3–4)
+`application/order-service` provides:
 
-## Outcome measures (planned)
+- Business flows: create order → process order  
+- Mock payment dependency (hooks reserved for future injection)  
+- Metrics, structured logs, OpenTelemetry traces  
+- k3s deployment + k6 harness  
 
-- Detection time
-- Detection precision / recall
-- Localization correctness
-- Recovery success rate (where autonomous action is in scope)
-- Resource overhead (CPU, memory, extra network)
-- Operational complexity (qualitative)
+No AI or self-healing logic is present yet.
+
+---
 
 ## Phased delivery
 
-1. **Phase 1** — Build the observable experimental subject
-2. **Phase 2** — Deploy on Kubernetes/k3s; add fault injection
-3. **Phase 3** — Embedded AI
-4. **Phase 4** — External AI Agent
-5. **Phase 5** — Controlled comparative experiments
-6. **Phase 6** — Statistical analysis
+1. **Phase 1 / 1.5 / 1.6** — Observable subject, k3s, metrics, k6 (+ exploratory E000)  
+2. **Baseline repeats** — E000-R1…R5; derive recovery envelopes  
+3. **Phase 2** — Fault injection with precise timestamps  
+4. **Phase 3** — Embedded AI (MAPE-K)  
+5. **Phase 4** — External AI Agent (MAPE-K)  
+6. **Phase 5** — Controlled comparative experiments  
+7. **Phase 6** — Statistical analysis  
+
+---
 
 ## Reproducibility
 
-Experiments must be runnable from documented commands, with deterministic seed data where applicable, fixed schemas, and versioned configuration. Detailed run steps will live under `experiments/` and `research/experiment-protocol.md` as later phases land.
+- Immutable image tags (`sha-*` / digests) in every experiment artifact  
+- Fixed k6 configuration within an experiment family  
+- Recorded fault start/end timestamps  
+- Documented recovery criteria derived from baseline  
+
+Analysis must allow Embedded >, External >, or no statistically significant difference for each RQ.

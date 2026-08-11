@@ -8,13 +8,15 @@ resources:
   - postgres/configmap.yaml
   - postgres/deployment.yaml
   - payment-service/deployment.yaml
+  - payment-service/servicemonitor.yaml
   - order-service/deployment.yaml
+  - order-service/servicemonitor.yaml
 
 # Single place to pin research experiment images.
 # Must match GHCR tags published by CI: sha-<short-commit> (7-char git SHA).
 # Do NOT use latest / main / dev / stable for experimental runs.
 images:
   - name: ghcr.io/mathiasgoulart/ai-self-healing-lab/order-service
-    newTag: sha-e48856b
+    newTag: sha-fd43433
   - name: ghcr.io/mathiasgoulart/ai-self-healing-lab/payment-service
-    newTag: sha-e48856b
+    newTag: sha-fd43433
