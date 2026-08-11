@@ -19,4 +19,4 @@ images:
   - name: ghcr.io/mathiasgoulart/ai-self-healing-lab/order-service
     newTag: sha-fd43433
   - name: ghcr.io/mathiasgoulart/ai-self-healing-lab/payment-service
-    newTag: sha-fd43433
+    newTag: sha-0df96b6
