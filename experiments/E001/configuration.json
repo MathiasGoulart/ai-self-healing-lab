@@ -1,0 +1,27 @@
+{
+  "experiment_id": "E001",
+  "name": "Payment Latency — Medium",
+  "status": "defined_not_executed",
+  "fault": {
+    "id": "F01",
+    "name": "payment_latency",
+    "target": "payment-service",
+    "severity": "medium",
+    "parameter_ms": 2000
+  },
+  "workload": {
+    "scenario": "baseline",
+    "script": "load-testing/scenarios/baseline.js",
+    "rate_iterations_per_second": 10,
+    "duration": "10m",
+    "flow": ["POST /orders", "POST /orders/:id/process"]
+  },
+  "timeline": {
+    "normal_minutes": [0, 3],
+    "fault_active_minutes": [3, 6],
+    "recovery_observation_minutes": [6, 10]
+  },
+  "ai_placement": null,
+  "self_healing": false,
+  "notes": "Formal E001 execution is deferred until after Phase 2A smoke validation review."
+}

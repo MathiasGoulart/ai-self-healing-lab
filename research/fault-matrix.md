@@ -12,6 +12,8 @@ This matrix lists fault classes under consideration. The final set may be reduce
 | ID  | Fault                    | Layer      | Example severity |
 | --- | ------------------------ | ---------- | ---------------- |
 | F01 | Payment latency          | Dependency | low / medium / high |
+
+**Phase 2A:** F01 is implemented in the Payment Service control API (`payment_latency`). See [`../fault-injector/README.md`](../fault-injector/README.md).
 | F02 | Payment errors           | Dependency | low / medium / high |
 | F03 | Payment unavailable      | Dependency | low / medium / high |
 | F04 | DB connection exhaustion | Database   | low / medium / high |

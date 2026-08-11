@@ -1,13 +1,15 @@
 {
   "name": "payment-service",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "Mock payment service designed for future fault injection",
+  "description": "Mock payment service with Phase 2A fault injection (F01 payment latency)",
   "main": "dist/main.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "start": "node dist/main.js",
-    "start:dev": "ts-node src/main.ts"
+    "start:dev": "ts-node src/main.ts",
+    "test": "jest",
+    "test:e2e": "jest --config ./test/jest-e2e.json --runInBand"
   },
   "dependencies": {
     "express": "^4.21.2",
@@ -15,8 +17,22 @@
   },
   "devDependencies": {
     "@types/express": "^5.0.1",
+    "@types/jest": "^29.5.14",
     "@types/node": "^22.13.14",
+    "@types/supertest": "^6.0.3",
+    "jest": "^29.7.0",
+    "supertest": "^7.1.0",
+    "ts-jest": "^29.3.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.2"
+  },
+  "jest": {
+    "moduleFileExtensions": ["js", "json", "ts"],
+    "rootDir": "src",
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "testEnvironment": "node"
   }
 }
