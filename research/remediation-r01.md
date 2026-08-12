@@ -211,10 +211,19 @@ Successful recovery (latency ∧ availability) is **not** expected from timeout-
 
 ## 8. Availability guardrail (frozen in protocol-freeze)
 
-Outcome classification uses [`protocol-freeze.md`](protocol-freeze.md) §4.1:
+Outcome classification uses [`protocol-freeze.md`](protocol-freeze.md) §4.1 — conjunction **per window**, then 2-of-3:
 
 ```text
-success_rate =
+recovery_window_i =
+    (p95_i < 500 ms)
+    AND
+    (success_rate_i >= 99%)
+
+SUCCESSFUL RECOVERY =
+    count(recovery_window_i == true) >= 2
+    over the latest 3 windows
+
+success_rate_i =
   sum(rate(orders_processing_total{job="order-service",result="success"}[30s]))
   /
   sum(rate(orders_processing_total{job="order-service"}[30s]))
@@ -222,12 +231,12 @@ success_rate =
 X_success = 99%
 ```
 
-| Latency (2-of-3) | Success ≥ 99% | Class |
-|------------------|---------------|-------|
-| p95 < 500 ms | yes | SUCCESSFUL RECOVERY (T3) |
-| p95 < 500 ms | no | PERFORMANCE CONTAINMENT (T3c) |
-| p95 ≥ 500 ms | yes | NOT RECOVERED |
-| p95 ≥ 500 ms | no | DEGRADED |
+| Class | Per-window predicate (≥ 2 of latest 3) |
+|-------|----------------------------------------|
+| SUCCESSFUL RECOVERY (T3) | `p95 < 500` ∧ `success ≥ 99%` |
+| PERFORMANCE CONTAINMENT (T3c) | `p95 < 500` ∧ `success < 99%` |
+| NOT RECOVERED | `p95 ≥ 500` ∧ `success ≥ 99%` |
+| DEGRADED | `p95 ≥ 500` ∧ `success < 99%` |
 
 ---
 

@@ -204,8 +204,13 @@ Degradation (all):  order_processing p95 > 500 ms, 2-of-3 × 30s
 
 E001 recovery:      p95 < 500 ms, 2-of-3          (latency only; executed)
 
-E002+ outcomes:     p95 < 500 ms AND success ≥ 99%  → SUCCESSFUL RECOVERY (T3)
-                    p95 < 500 ms AND success < 99%  → PERFORMANCE CONTAINMENT (T3c)
+E002+ SUCCESSFUL RECOVERY (T3):
+  recovery_window_i = (p95_i < 500 ms) AND (success_rate_i >= 99%)
+  count(recovery_window_i) >= 2 over latest 3 windows
+
+E002+ PERFORMANCE CONTAINMENT (T3c):
+  containment_window_i = (p95_i < 500 ms) AND (success_rate_i < 99%)
+  count(containment_window_i) >= 2 over latest 3 windows
 ```
 
 ---

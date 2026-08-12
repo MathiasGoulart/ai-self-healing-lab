@@ -91,7 +91,7 @@ outcome class (see §4.1)
 ```
 
 Degradation detection remains latency-based (unchanged).  
-**Recovery / outcome classification** for self-healing runs requires the availability guardrail (§4.1).
+**Recovery / outcome classification** for self-healing runs uses per-window conjunction then 2-of-3 (§4.1) — not independent M-of-N on each metric.
 
 ### Meaning of “2 of 3”
 
@@ -147,11 +147,46 @@ A single datapoint (or single window) below 500 ms does **not** establish recove
 
 ### 4.1 E002+ outcome taxonomy (latency ∧ availability)
 
-Latency-only “recovery” is an **escape hatch**: an AI could drive p95 down by rejecting all requests (e.g. `timeout_ms = 1`). Self-healing runs therefore classify outcomes on **both** dimensions over the same 2-of-3 window set.
+Latency-only “recovery” is an **escape hatch**: an AI could drive p95 down by rejecting all requests (e.g. `timeout_ms = 1`). Self-healing runs therefore require **both** latency and availability in the **same** sampling window before counting that window toward 2-of-3.
 
-**Latency condition (unchanged):** order-processing p95 **< 500 ms**
+**Per-window predicates** (each 30 s window `i`):
 
-**Availability guardrail:**
+```text
+recovery_window_i =
+    (p95_i < 500 ms)
+    AND
+    (success_rate_i >= 99%)
+
+containment_window_i =
+    (p95_i < 500 ms)
+    AND
+    (success_rate_i < 99%)
+
+not_recovered_window_i =
+    (p95_i >= 500 ms)
+    AND
+    (success_rate_i >= 99%)
+
+degraded_window_i =
+    (p95_i >= 500 ms)
+    AND
+    (success_rate_i < 99%)
+```
+
+**2-of-3 rule (rolling):** at each evaluation, consider the three most recent windows. An outcome class is declared when at least **2 of those 3** windows satisfy that class’s per-window predicate.
+
+```text
+SUCCESSFUL RECOVERY =
+    count(recovery_window_i == true) >= 2
+    over the latest 3 windows
+
+PERFORMANCE CONTAINMENT =
+    count(containment_window_i == true) >= 2
+    over the latest 3 windows
+```
+
+`p95_i` is order-processing p95 for window `i`.  
+`success_rate_i` is:
 
 ```promql
 sum(rate(orders_processing_total{job="order-service",result="success"}[30s]))
@@ -165,16 +200,19 @@ Use `job="order-service"` (same scrape convention as the primary latency SLI / E
 |-----------|-------|
 | Sampling window | **30 seconds** |
 | Success threshold **X** (`X_success`) | **99%** (frozen; E000-R6/R7/R8 observed healthy success = 100%) |
-| Evaluation | **2 of 3** rolling windows must satisfy **both** conditions for SUCCESSFUL RECOVERY |
+| Conjunction | Both conditions must hold **in the same window** before that window counts |
+| Evaluation | **2 of 3** rolling windows with `recovery_window_i == true` → **SUCCESSFUL RECOVERY** |
 
-**Outcome classes:**
+**Outcome classes (after 2-of-3 on the corresponding predicate):**
 
-| Latency (2-of-3) | Success rate (2-of-3) | Class |
-|------------------|----------------------|-------|
-| p95 < 500 ms | ≥ **99%** | **SUCCESSFUL RECOVERY** |
-| p95 < 500 ms | < **99%** | **PERFORMANCE CONTAINMENT** |
-| p95 ≥ 500 ms | ≥ **99%** | **NOT RECOVERED** |
-| p95 ≥ 500 ms | < **99%** | **DEGRADED** |
+| Class | Per-window predicate (must hold in ≥ 2 of latest 3) | Timestamp |
+|-------|-----------------------------------------------------|-----------|
+| **SUCCESSFUL RECOVERY** | `p95 < 500` **∧** `success ≥ 99%` | **T3** |
+| **PERFORMANCE CONTAINMENT** | `p95 < 500` **∧** `success < 99%` | **T3c** |
+| **NOT RECOVERED** | `p95 ≥ 500` **∧** `success ≥ 99%` | — |
+| **DEGRADED** | `p95 ≥ 500` **∧** `success < 99%` | — |
+
+Do **not** apply 2-of-3 separately to latency and availability and then AND the two M-of-N results. That would allow mismatched windows (e.g. latency OK in W1/W2, success OK in W2/W3) to falsely declare recovery.
 
 Under F01 (+2000 ms) + R01 `timeout_ms = 300`, the **expected** class is **PERFORMANCE CONTAINMENT**. That is a valid scientific outcome, not a failed experiment.
 

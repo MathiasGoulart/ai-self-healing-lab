@@ -71,14 +71,27 @@ Used only for fault characterization after **manual** fault deactivation. Not su
 
 ## Recovery — E002+ (latency ∧ availability)
 
-Same 2-of-3 rolling windows. Classify:
+Both conditions must hold in the **same** 30 s window; then apply 2-of-3 to those conjunctive windows:
 
-| Latency | Success rate | Class | Timestamp |
-|---------|--------------|-------|-----------|
-| p95 < 500 | ≥ **99%** | **SUCCESSFUL RECOVERY** | **T3** |
-| p95 < 500 | < **99%** | **PERFORMANCE CONTAINMENT** | **T3c** |
-| p95 ≥ 500 | ≥ **99%** | **NOT RECOVERED** | — |
-| p95 ≥ 500 | < **99%** | **DEGRADED** | — |
+```text
+recovery_window_i =
+    (p95_i < 500 ms)
+    AND
+    (success_rate_i >= 99%)
+
+SUCCESSFUL RECOVERY =
+    count(recovery_window_i == true) >= 2
+    over the latest 3 windows
+```
+
+| Class | Per-window predicate (≥ 2 of latest 3) | Timestamp |
+|-------|----------------------------------------|-----------|
+| **SUCCESSFUL RECOVERY** | `p95 < 500` **∧** `success ≥ 99%` | **T3** |
+| **PERFORMANCE CONTAINMENT** | `p95 < 500` **∧** `success < 99%` | **T3c** |
+| **NOT RECOVERED** | `p95 ≥ 500` **∧** `success ≥ 99%` | — |
+| **DEGRADED** | `p95 ≥ 500` **∧** `success < 99%` | — |
+
+Do **not** AND two independent 2-of-3 evaluations (latency M-of-N separately from success M-of-N).
 
 Action initiation = **T2**. Fault must remain active (`fault_injection_active = 1`). FaultController must **not** be used as remediation.
 
