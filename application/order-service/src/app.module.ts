@@ -5,6 +5,7 @@ import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './health/health.module';
 import { OrdersModule } from './orders/orders.module';
 import { PaymentsModule } from './payments/payments.module';
+import { RemediationModule } from './remediation/remediation.module';
 import { TelemetryModule } from './telemetry/telemetry.module';
 import { CommonModule } from './common/common.module';
 
@@ -17,6 +18,7 @@ import { CommonModule } from './common/common.module';
     CommonModule,
     DatabaseModule,
     TelemetryModule,
+    RemediationModule,
     PaymentsModule,
     OrdersModule,
     HealthModule,

@@ -16,7 +16,7 @@ This document freezes the measurement and health-evaluation model used for E001 
 | Availability guardrail `X_success` | **success ≥ 99%** |
 | E004 | AI may choose `timeout_ms` within **[250, 450] ms** (separate experiment) |
 
-Characterization evidence: [`r01-parameter-characterization.md`](r01-parameter-characterization.md). Actuator **not implemented**; E002/E003 **not executed**.
+Characterization evidence: [`r01-parameter-characterization.md`](r01-parameter-characterization.md). Actuator **implemented** (Order Service); E002/E003 **not executed**.
 
 ---
 

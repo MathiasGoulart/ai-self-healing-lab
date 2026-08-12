@@ -29,6 +29,9 @@ export class MetricsService implements OnModuleInit {
   readonly orderProcessingDuration: Histogram<string>;
   readonly paymentRequestsTotal: Counter<string>;
   readonly paymentRequestDuration: Histogram<string>;
+  readonly paymentTimeoutsTotal: Counter<string>;
+  readonly remediationActive: Gauge<string>;
+  readonly remediationPaymentTimeoutMs: Gauge<string>;
   readonly databasePoolActiveConnections: Gauge<string>;
   readonly databasePoolIdleConnections: Gauge<string>;
   readonly databasePoolWaitingRequests: Gauge<string>;
@@ -96,6 +99,25 @@ export class MetricsService implements OnModuleInit {
       name: 'payment_request_duration_seconds',
       help: 'Duration of payment service requests in seconds',
       buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
+      registers: [this.registry],
+    });
+
+    this.paymentTimeoutsTotal = new Counter({
+      name: 'payment_timeouts_total',
+      help: 'Total payment client calls aborted by R01 runtime dependency timeout',
+      registers: [this.registry],
+    });
+
+    this.remediationActive = new Gauge({
+      name: 'remediation_active',
+      help: 'Whether a remediation actuator is currently engaged (1=on, 0=off)',
+      labelNames: ['action'],
+      registers: [this.registry],
+    });
+
+    this.remediationPaymentTimeoutMs = new Gauge({
+      name: 'remediation_payment_timeout_ms',
+      help: 'Configured R01 payment timeout in milliseconds (0 when inactive)',
       registers: [this.registry],
     });
 

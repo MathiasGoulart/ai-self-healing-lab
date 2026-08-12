@@ -2,8 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { context, propagation, trace } from '@opentelemetry/api';
 import { PinoLogger } from 'nestjs-pino';
+import { RemediationService } from '../remediation/remediation.service';
 import { MetricsService } from '../telemetry/metrics.service';
-import { PaymentError } from './payment.errors';
+import { PaymentError, PaymentTimeoutError } from './payment.errors';
 import { PaymentRequest, PaymentResponse } from './payment.types';
 
 @Injectable()
@@ -14,6 +15,7 @@ export class PaymentClient {
   constructor(
     private readonly config: ConfigService,
     private readonly metrics: MetricsService,
+    private readonly remediation: RemediationService,
     private readonly logger: PinoLogger,
   ) {
     this.logger.setContext(PaymentClient.name);
@@ -28,6 +30,11 @@ export class PaymentClient {
       span.setAttribute('product.id', request.productId);
       span.setAttribute('order.quantity', request.quantity);
 
+      const timeoutMs = this.remediation.getActivePaymentTimeoutMs();
+      if (timeoutMs !== null) {
+        span.setAttribute('payment.timeout_ms', timeoutMs);
+      }
+
       try {
         const headers: Record<string, string> = {
           'content-type': 'application/json',
@@ -35,11 +42,16 @@ export class PaymentClient {
         };
         propagation.inject(context.active(), headers);
 
-        const response = await fetch(`${this.baseUrl}/payments`, {
+        const init: RequestInit = {
           method: 'POST',
           headers,
           body: JSON.stringify(request),
-        });
+        };
+        if (timeoutMs !== null) {
+          init.signal = AbortSignal.timeout(timeoutMs);
+        }
+
+        const response = await fetch(`${this.baseUrl}/payments`, init);
 
         if (!response.ok) {
           this.metrics.paymentRequestsTotal.inc({ result: 'failure' });
@@ -60,6 +72,22 @@ export class PaymentClient {
         span.setAttribute('payment.status', data.status);
         return data;
       } catch (error) {
+        if (this.isAbortError(error) && timeoutMs !== null) {
+          this.metrics.paymentTimeoutsTotal.inc();
+          this.metrics.paymentRequestsTotal.inc({ result: 'failure' });
+          const timeoutError = new PaymentTimeoutError(timeoutMs);
+          span.recordException(timeoutError);
+          this.logger.warn(
+            {
+              event: 'payment_timeout',
+              orderId: request.orderId,
+              timeout_ms: timeoutMs,
+            },
+            'Payment request timed out (R01)',
+          );
+          throw timeoutError;
+        }
+
         if (!(error instanceof PaymentError)) {
           this.metrics.paymentRequestsTotal.inc({ result: 'failure' });
         }
@@ -70,5 +98,13 @@ export class PaymentClient {
         span.end();
       }
     });
+  }
+
+  private isAbortError(error: unknown): boolean {
+    if (!error || typeof error !== 'object') {
+      return false;
+    }
+    const name = (error as { name?: string }).name;
+    return name === 'TimeoutError' || name === 'AbortError';
   }
 }

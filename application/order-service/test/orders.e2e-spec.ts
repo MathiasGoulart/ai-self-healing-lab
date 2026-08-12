@@ -18,6 +18,7 @@ describe('Orders API (e2e)', () => {
   let ordersRepo: Repository<Order>;
   let paymentServer: Server;
   let paymentShouldFail = false;
+  let paymentDelayMs = 0;
 
   beforeAll(async () => {
     process.env.NODE_ENV = 'test';
@@ -34,14 +35,21 @@ describe('Orders API (e2e)', () => {
     paymentApp.get('/health/live', (_req, res) => res.json({ status: 'ok' }));
     paymentApp.get('/health/ready', (_req, res) => res.json({ status: 'ok' }));
     paymentApp.post('/payments', (req, res) => {
-      if (paymentShouldFail) {
-        res.status(502).json({ message: 'injected payment failure' });
+      const respond = () => {
+        if (paymentShouldFail) {
+          res.status(502).json({ message: 'injected payment failure' });
+          return;
+        }
+        res.json({
+          paymentId: `payment-${randomUUID()}`,
+          status: 'APPROVED',
+        });
+      };
+      if (paymentDelayMs > 0) {
+        setTimeout(respond, paymentDelayMs);
         return;
       }
-      res.json({
-        paymentId: `payment-${randomUUID()}`,
-        status: 'APPROVED',
-      });
+      respond();
     });
 
     await new Promise<void>((resolve) => {
@@ -71,7 +79,10 @@ describe('Orders API (e2e)', () => {
 
   beforeEach(async () => {
     paymentShouldFail = false;
+    paymentDelayMs = 0;
     await ordersRepo.clear();
+    // Ensure R01 is off between tests
+    await request(app.getHttpServer()).delete('/remediation/payment_timeout');
   });
 
   afterAll(async () => {
@@ -156,6 +167,96 @@ describe('Orders API (e2e)', () => {
         .post(`/orders/${created.body.id}/process`)
         .expect(400);
     });
+  });
+
+  describe('R01 remediation actuator', () => {
+    it('activates, exposes metrics, and clears payment timeout via HTTP adapter', async () => {
+      const off = await request(app.getHttpServer()).get('/remediation').expect(200);
+      expect(off.body.remediations[0].enabled).toBe(false);
+
+      const activate = await request(app.getHttpServer())
+        .post('/remediation/payment_timeout')
+        .send({ enabled: true, timeout_ms: 300 })
+        .expect(201);
+      expect(activate.body.status).toBe('activated');
+      expect(activate.body.state.enabled).toBe(true);
+      expect(activate.body.state.timeout_ms).toBe(300);
+
+      const on = await request(app.getHttpServer()).get('/remediation').expect(200);
+      expect(on.body.remediations[0].enabled).toBe(true);
+
+      const metrics = await request(app.getHttpServer()).get('/metrics').expect(200);
+      expect(metrics.text).toContain('remediation_active');
+      expect(metrics.text).toContain('action="payment_timeout"');
+      expect(metrics.text).toMatch(/remediation_active\{[^}]*action="payment_timeout"[^}]*\} 1\b/);
+      expect(metrics.text).toMatch(/remediation_payment_timeout_ms(?:\{[^}]*\})? 300\b/);
+      expect(metrics.text).toContain('payment_timeouts_total');
+
+      const health = await request(app.getHttpServer()).get('/health/live').expect(200);
+      expect(health.body.status).toBe('ok');
+
+      const clear = await request(app.getHttpServer())
+        .delete('/remediation/payment_timeout')
+        .expect(200);
+      expect(clear.body.status).toBe('deactivated');
+
+      const metricsAfter = await request(app.getHttpServer()).get('/metrics').expect(200);
+      expect(metricsAfter.text).toMatch(/remediation_active\{[^}]*action="payment_timeout"[^}]*\} 0\b/);
+      expect(metricsAfter.text).toMatch(/remediation_payment_timeout_ms(?:\{[^}]*\})? 0\b/);
+    });
+
+    it('rejects out-of-bounds timeout_ms', async () => {
+      await request(app.getHttpServer())
+        .post('/remediation/payment_timeout')
+        .send({ enabled: true, timeout_ms: 200 })
+        .expect(400);
+      await request(app.getHttpServer())
+        .post('/remediation/payment_timeout')
+        .send({ enabled: true, timeout_ms: 500 })
+        .expect(400);
+
+      const state = await request(app.getHttpServer()).get('/remediation').expect(200);
+      expect(state.body.remediations[0].enabled).toBe(false);
+    });
+
+    it('contains slow payment: order FAILED and payment_timeouts_total increments', async () => {
+      paymentDelayMs = 800;
+
+      await request(app.getHttpServer())
+        .post('/remediation/payment_timeout')
+        .send({ enabled: true, timeout_ms: 300 })
+        .expect(201);
+
+      const created = await request(app.getHttpServer())
+        .post('/orders')
+        .send({ productId: 'product-123', quantity: 1 })
+        .expect(201);
+
+      const before = await request(app.getHttpServer()).get('/metrics').expect(200);
+      const beforeMatch = before.text.match(/^payment_timeouts_total(?:\{[^}]*\})? (\d+)/m);
+      const beforeCount = beforeMatch ? Number(beforeMatch[1]) : 0;
+
+      const t0 = Date.now();
+      const processed = await request(app.getHttpServer())
+        .post(`/orders/${created.body.id}/process`)
+        .expect(502);
+      const elapsed = Date.now() - t0;
+
+      expect(processed.body.remediation).toBe('payment_timeout');
+      expect(elapsed).toBeGreaterThanOrEqual(250);
+      expect(elapsed).toBeLessThan(700);
+
+      const order = await ordersRepo.findOneByOrFail({ id: created.body.id });
+      expect(order.status).toBe(OrderStatus.FAILED);
+
+      const after = await request(app.getHttpServer()).get('/metrics').expect(200);
+      const afterMatch = after.text.match(/^payment_timeouts_total(?:\{[^}]*\})? (\d+)/m);
+      const afterCount = afterMatch ? Number(afterMatch[1]) : 0;
+      expect(afterCount).toBeGreaterThan(beforeCount);
+
+      // Note: local mock has no FaultController — future k3s smoke must assert
+      // fault_injection_active=1 AND remediation_active=1 simultaneously.
+    }, 15000);
   });
 
   describe('health and metrics', () => {
