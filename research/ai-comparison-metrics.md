@@ -57,7 +57,7 @@ T3c − T2    time from action to containment (if any)
 
 One of: `SUCCESSFUL RECOVERY` | `PERFORMANCE CONTAINMENT` | `NOT RECOVERED` | `DEGRADED`.
 
-Under F01 + R01 fixed timeout, **PERFORMANCE CONTAINMENT** is the expected class ([`remediation-r01.md`](remediation-r01.md)).
+Under F01 + R01 (`timeout_ms = 300`), **PERFORMANCE CONTAINMENT** is the expected class ([`remediation-r01.md`](remediation-r01.md)).
 
 ### Action Correctness
 

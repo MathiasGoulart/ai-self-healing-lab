@@ -1,20 +1,28 @@
 # R01 Parameter Characterization (Analysis Only)
 
 **Document type:** Empirical parameterization analysis  
-**Status:** Analysis complete — **does not modify** the frozen experimental protocol  
+**Status:** Analysis complete — parameters **accepted into protocol freeze** (2026-08-12)  
 **Date:** 2026-08-12  
 **Scope:** E000-R6 / R7 / R8 controlled baseline only (plus E001 F01 sanity cross-check)
 
 ```text
-No protocol changes were made.
+Analysis task did not modify the experimental protocol.
+Protocol freeze of derived parameters is a separate amendment (see §10).
 No E002/E003 execution occurred.
 No F01 activation occurred.
 No R01 actuator implementation occurred.
 ```
 
-Related design: [`remediation-r01.md`](remediation-r01.md) · Dual-outcome recovery: [`protocol-freeze.md`](protocol-freeze.md) §4.1
+Frozen values (protocol): [`remediation-r01.md`](remediation-r01.md) · [`protocol-freeze.md`](protocol-freeze.md)
 
-Companion machine-readable extract: [`r01-parameter-characterization-raw.json`](r01-parameter-characterization-raw.json)
+| Parameter | Frozen value |
+|-----------|-------------:|
+| `X_success` | **99%** |
+| `timeout_ms` | **300** |
+| `Tmin` | **250** |
+| `Tmax` | **450** |
+
+Companion machine-readable extract (unchanged): [`r01-parameter-characterization-raw.json`](r01-parameter-characterization-raw.json)
 
 ---
 
@@ -159,13 +167,13 @@ This is **observed**, not assumed.
 | Observed healthy success rate (R6–R8) | **100%** |
 | **Recommended X** | **99%** |
 
-**Justification (data-bound, protocol not edited here):**
+**Justification (data-bound):**
 
 - Baseline never fell below 100% process success across ~18k attempts.
 - At 10 orders/s and 30 s windows (~300 attempts/window), **99%** tolerates ≈ 3 failures/window; **95%** would tolerate ≈ 15 — too loose for a service that is empirically perfect in the controlled baseline.
 - 99% leaves a small measurement/scrape margin without endorsing material availability loss as “successful recovery.”
 
-Candidate already noted in protocol-freeze; this analysis **supports** freezing **99%** when the protocol is next amended. **No protocol file was changed in this task.**
+**Protocol status:** `X_success = 99%` is **frozen** in [`protocol-freeze.md`](protocol-freeze.md) / [`recovery-criteria.md`](recovery-criteria.md).
 
 ---
 
@@ -188,8 +196,8 @@ timeout_ms            ≪  2000 ms        (must bound F01 medium)
 | vs 500 ms SLI threshold | **300 < 500** ✓ |
 | vs F01 +2000 ms | **300 ≪ 2000** ✓ |
 
-**False-timeout under healthy load (estimate from pooled buckets):**  
-~28 observations in (250 ms, 500 ms] and ~4 above 500 ms out of ~17994. Approximating the (250,500] bucket as uniform, ≈ 0.15% of healthy payments would exceed 300 ms — well below a 1% availability budget (compatible with X = 99%).
+**False-timeout under healthy load:**  
+Histogram buckets do **not** resolve how many healthy samples exceed exactly 300 ms (the (250 ms, 500 ms] bucket is coarse). This analysis therefore **does not** claim a quantitative false-timeout rate (e.g. “&lt; 1%”). Justification for 300 ms is limited to the observed p99 statistics (pooled **164.2 ms**; max per-run **187.8 ms**).
 
 **True max proxy (5000 ms) is not used to set timeout:** those events are rare natural spikes already accepted by the p95 + 2-of-3 health model; sizing timeout to the absolute max would push timeout toward/above 500 ms and defeat containment.
 
@@ -217,21 +225,20 @@ E002/E003 must use this **fixed** value for both Embedded and External.
 
 Even with a fixed protocol timeout, the actuator must reject SLI-gaming values.
 
-| Bound | Recommended | Derivation |
-|-------|------------:|------------|
-| **Tmin** | **200 ms** | Strictly above healthy payment p99 (pooled 164.2 ms; conservative per-run max 187.8 ms). Blocks `timeout_ms = 1` and other sub-tail values. |
-| **Tmax** | **450 ms** | Strictly below the 500 ms latency degradation/recovery threshold, with a 50 ms margin so the timeout ceiling cannot sit on the SLI boundary. |
+| Bound | Analysis recommendation | Protocol freeze |
+|-------|------------------------:|----------------:|
+| **Tmin** | 200 ms | **250 ms** |
+| **Tmax** | 450 ms | **450 ms** |
+
+**Tmin (protocol = 250 ms):** Above healthy payment p99 (pooled 164.2 ms; max per-run 187.8 ms). Stricter than the analysis floor of 200 ms; still leaves room for the fixed `timeout_ms = 300`. Blocks `timeout_ms = 1` and other sub-tail values.
+
+**Tmax (protocol = 450 ms):** Strictly below the 500 ms latency degradation/recovery threshold, with a 50 ms margin so the timeout ceiling cannot sit on the SLI boundary.
 
 ```text
-Tmin = 200 ms  >  healthy payment p99
-Tmax = 450 ms  <  500 ms
+Protocol:  250 ≤ timeout_ms ≤ 450
+Fixed E002/E003 value: 300 ∈ [250, 450]
 ```
 
-```text
-200 ≤ timeout_ms ≤ 450
-```
-
-Fixed E002/E003 value **300** lies inside `[200, 450]`.  
 AI **must not** choose `timeout_ms` in E002/E003 (that is E004 — R01-adaptive).
 
 ---
@@ -259,25 +266,24 @@ Recommended availability guardrail X: 99 %
 
 Recommended R01 timeout: 300 ms
 
-Recommended Tmin: 200 ms
-Recommended Tmax: 450 ms
+Recommended Tmin (analysis): 200 ms
+Frozen Tmin (protocol): 250 ms
+Recommended / frozen Tmax: 450 ms
 
 Rationale:
   Pooled payment_request_duration p99 over E000-R6/R7/R8 is 164.2 ms
   (conservative max of per-run p99 = 187.8 ms). timeout_ms = 300 sits
-  ~1.6–1.8× above that healthy p99, remains < 500 ms so containment can
-  satisfy the latency SLI, and is ≪ F01 +2000 ms. Estimated healthy
-  false-timeout rate at 300 ms is ≪ 1%, compatible with X = 99% given
-  observed 100% baseline success. Tmin = 200 ms blocks sub-tail gaming;
-  Tmax = 450 ms keeps the actuator ceiling below the 500 ms threshold.
+  above that healthy p99 band and remains < 500 ms so containment can
+  satisfy the latency SLI, and is ≪ F01 +2000 ms. No quantitative
+  healthy false-timeout rate is claimed from coarse histogram buckets.
+  Protocol freezes Tmin = 250 ms (above p99; stricter than analysis 200 ms)
+  and Tmax = 450 ms (< 500 ms SLI threshold).
 ```
 
 ```text
-No protocol changes were made.
 No E002/E003 execution occurred.
 No F01 activation occurred.
 ```
-
 ---
 
 ## 9. Assumptions and limitations
@@ -286,16 +292,20 @@ No F01 activation occurred.
 2. **`increase()` scrape noise:** Counts are non-integral (~5998–6001); rounded for tables; negligible for rates.
 3. **Inter-run gaps:** Pooled 1840 s window includes ~15 s pauses; they add essentially no payment samples.
 4. **Max:** Histogram proxy ≠ true max; rare multi-second samples exist and are ignored for timeout sizing (by design).
-5. **False-timeout estimate** inside (250,500] assumes uniformity within the bucket — approximate only.
-6. **Protocol:** Recommendations are advisory until an explicit protocol amendment freezes X / `timeout_ms` / bounds.
+5. **False-timeout rate:** Not quantified; (250 ms, 500 ms] bucket is too coarse to count samples &gt; 300 ms exactly.
+6. **Protocol:** Parameters frozen after this analysis — see §10.
 
 ---
 
-## 10. Suggested next step (out of scope here)
+## 10. Protocol freeze (completed)
 
-When accepting these values, amend (in a **separate** change):
+Accepted into protocol documents (actuator still not implemented):
 
-- [`remediation-r01.md`](remediation-r01.md) — publish `timeout_ms = 300`, `Tmin = 200`, `Tmax = 450`
-- [`protocol-freeze.md`](protocol-freeze.md) — freeze availability guardrail **X = 99%**
+| Parameter | Value | Documents |
+|-----------|------:|-----------|
+| `X_success` | **99%** | `protocol-freeze.md`, `recovery-criteria.md`, `remediation-r01.md` |
+| `timeout_ms` | **300** | `remediation-r01.md`, `protocol-freeze.md`, `experimental-protocol.md` |
+| `Tmin` | **250** | same |
+| `Tmax` | **450** | same |
 
-Do **not** implement the actuator until that freeze is explicit.
+Raw characterization JSON was **not** modified.

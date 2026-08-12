@@ -42,7 +42,7 @@ sum(rate(orders_processing_total{job="order-service"}[30s]))
 
 Use `job="order-service"` (E001 / Grafana convention). Do not rely on app label `service` alone (`exported_service` after scrape).
 
-**Threshold X:** **99%** (candidate freeze from E000-R6/R7/R8: process→PAID success = 100%).
+**Threshold X (`X_success`):** **99%** (frozen; E000-R6/R7/R8 observed healthy success = 100%; see [`r01-parameter-characterization.md`](r01-parameter-characterization.md)).
 
 ---
 
@@ -82,7 +82,7 @@ Same 2-of-3 rolling windows. Classify:
 
 Action initiation = **T2**. Fault must remain active (`fault_injection_active = 1`).
 
-R01 (runtime dependency timeout) under F01 is **expected** to land in **PERFORMANCE CONTAINMENT**. Falling success rate is an intended cost of fail-fast containment, not a bug. See [`remediation-r01.md`](remediation-r01.md).
+R01 (runtime dependency timeout, `timeout_ms = 300`) under F01 is **expected** to land in **PERFORMANCE CONTAINMENT**. Falling success rate is an intended cost of fail-fast containment, not a bug. See [`remediation-r01.md`](remediation-r01.md).
 
 ---
 
@@ -92,7 +92,7 @@ R01 (runtime dependency timeout) under F01 is **expected** to land in **PERFORMA
 
 Not a universal backend latency standard.
 
-> 99% success is an experimental availability floor derived from a controlled baseline with observed 100% process→PAID success (E000-R6/R7/R8).
+> 99% success (`X_success`) is the frozen experimental availability floor, derived from a controlled baseline with observed 100% process success (E000-R6/R7/R8).
 
 ---
 

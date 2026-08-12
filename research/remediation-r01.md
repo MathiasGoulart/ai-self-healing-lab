@@ -1,22 +1,22 @@
 # R01 — Runtime Dependency Timeout (Containment)
 
-**Document type:** Experimental protocol (remediation design for E002+)  
-**Status:** Design frozen; parameterization pending baseline characterization — **not implemented**  
-**Date:** 2026-08-12
+**Document type:** Experimental protocol (remediation freeze for E002+)  
+**Status:** **Parameters frozen** — actuator **not implemented**  
+**Date:** 2026-08-12  
+**Characterization:** [`r01-parameter-characterization.md`](r01-parameter-characterization.md)
 
-This document freezes the **design** of the first legitimate self-healing remediation for F01 (payment latency). It is intentionally **not** fault deactivation.
+This document freezes the first legitimate self-healing remediation for F01 (payment latency). It is intentionally **not** fault deactivation.
 
-**Not fully frozen until:**
+### Frozen parameters
 
-```text
-timeout_ms = X
-Tmin, Tmax
-availability threshold X_success (protocol-freeze)
-```
+| Parameter | Value |
+|-----------|------:|
+| `timeout_ms` (E002 / E003 fixed) | **300** |
+| `Tmin` | **250** |
+| `Tmax` | **450** |
+| `X_success` (availability guardrail) | **99%** |
 
-are derived from healthy payment-latency characterization (E000-R6/R7/R8 and/or E001 HEALTHY windows). Do **not** implement R01 or choose X arbitrarily before that step.
-
-Canonical outcome taxonomy and availability guardrail: [`protocol-freeze.md`](protocol-freeze.md) §4.1 · [`recovery-criteria.md`](recovery-criteria.md).
+Canonical outcome taxonomy: [`protocol-freeze.md`](protocol-freeze.md) §4.1 · [`recovery-criteria.md`](recovery-criteria.md).
 
 ---
 
@@ -31,8 +31,8 @@ same application
 same fault (F01 medium, +2000 ms)
 same health information model
 same remediation (R01)
-same fixed timeout parameter
-same success criteria
+same fixed timeout parameter (300 ms)
+same success criteria (X_success = 99%)
 ```
 
 Independent variable:
@@ -83,14 +83,14 @@ AI detects anomaly
      ↓
 AI decides R01 is appropriate
      ↓
-AI activates runtime timeout configuration (fixed X)
+AI activates runtime timeout configuration (fixed 300 ms)
      ↓
 system adapts
      ↓
 latency contained (availability may drop)
 ```
 
-For **E002 / E003**, the timeout **value** is fixed by protocol. The AI decides **whether / when** to activate R01 — not which millisecond value to use.
+For **E002 / E003**, the timeout **value** is fixed by protocol at **300 ms**. The AI decides **whether / when** to activate R01 — not which millisecond value to use.
 
 Naming note: do **not** call E002/E003 “adaptive timeout.” Adaptive **parameter** selection is **E004 — R01-adaptive**.
 
@@ -99,54 +99,41 @@ Naming note: do **not** call E002/E003 “adaptive timeout.” Adaptive **parame
 ## 4. Fixed parameter (E002 / E003)
 
 | Parameter | Value |
-|-----------|-------|
-| `timeout_ms` | **Fixed constant X** (same for Embedded and External) |
-| Choice of X | **Pending** — must follow the characterization sequence below |
+|-----------|------:|
+| `timeout_ms` | **300** (identical for Embedded and External) |
 
-### Characterization sequence (required before implementation)
+### Justification (observed baseline only)
 
-```text
-E000 R6 / R7 / R8  (+ optional E001 HEALTHY windows)
-        │
-        ▼
-payment_request_duration_seconds (healthy)
-        │
-        ├── p50
-        ├── p95
-        ├── p99
-        └── max
-        │
-        ▼
-choose X, Tmin, Tmax
-```
+From [`r01-parameter-characterization.md`](r01-parameter-characterization.md) on E000-R6/R7/R8 `payment_request_duration_seconds`:
 
-### Constraints on X
+| Statistic | Value |
+|-----------|------:|
+| Pooled healthy payment p99 | **164.2 ms** |
+| Max of per-run healthy p99 | **187.8 ms** |
 
 ```text
-X < 500 ms
-    must be able to move primary latency SLI under the degradation threshold
-
-X must be sufficiently above the healthy payment latency tail
-    to avoid material false timeouts during normal operation
+timeout_ms = 300
+  > max(per-run p99) = 187.8 ms
+  > pooled p99 = 164.2 ms
+  < 500 ms          (latency SLI threshold)
+  ≪ 2000 ms         (F01 medium injection)
 ```
 
-The second constraint is qualitative until the distribution is measured. After characterization, freeze a **quantitative** rule if the data permit (e.g. a multiple of healthy p99, or a fixed margin above p99/max), then publish X / Tmin / Tmax. Do **not** pre-freeze values such as 300 ms.
+Do **not** claim a quantitative healthy false-timeout rate from histogram buckets alone: the (250 ms, 500 ms] bucket does not resolve how many samples exceed exactly 300 ms. Justification is limited to the observed p99 statistics above.
 
 Do **not** confuse baselines:
 
 ```text
 k6 order_flow p95 (≈ 288–306 ms on R6–R8)
         ≠
-order_processing p95 (server-side; E001 healthy windows ≈ 50–90 ms)
+order_processing p95 (server-side)
         ≠
-payment_request_duration p95 (client-side dependency; to be measured)
+payment_request_duration p99 (164.2 ms pooled — used here)
 ```
-
-Timeout selection uses **payment** latency distribution, not k6 order-flow p95.
 
 ### Future experiment (out of scope for E002)
 
-**E004 — R01-adaptive:** AI chooses `timeout_ms ∈ [Tmin, Tmax]` to study remediation decision quality. Separate IV; not mixed into E002/E003.
+**E004 — R01-adaptive:** AI chooses `timeout_ms ∈ [Tmin, Tmax]` = `[250, 450]` to study remediation decision quality. Separate IV; not mixed into E002/E003.
 
 ---
 
@@ -156,14 +143,15 @@ Even with a fixed protocol value, the actuator enforces:
 
 ```text
 Tmin ≤ timeout_ms ≤ Tmax
+250  ≤ timeout_ms ≤ 450
 ```
 
-| Purpose | Example abuse blocked |
-|---------|------------------------|
-| Lower bound | `timeout_ms = 1` gaming latency SLI |
-| Upper bound | `timeout_ms = 999999` effectively disabling the remediation |
+| Bound | Value | Derivation |
+|-------|------:|------------|
+| **Tmin** | **250 ms** | Above healthy payment p99 (pooled 164.2 ms; max per-run 187.8 ms). Blocks `timeout_ms = 1` and other sub-tail gaming. |
+| **Tmax** | **450 ms** | Below the 500 ms latency threshold (50 ms margin). Blocks `timeout_ms ≥ 500` / effectively disabling containment relative to the SLI. |
 
-`Tmin` / `Tmax` are frozen after payment-tail characterization (same artifact pass as X).
+E002/E003 fixed value **300** ∈ `[250, 450]`.
 
 ---
 
@@ -188,7 +176,7 @@ Conceptual control surface (to be implemented later):
 
 ```text
 GET    /remediation
-POST   /remediation/payment_timeout   { "enabled": true, "timeout_ms": X }
+POST   /remediation/payment_timeout   { "enabled": true, "timeout_ms": 300 }
 DELETE /remediation/payment_timeout
 ```
 
@@ -196,7 +184,7 @@ DELETE /remediation/payment_timeout
 
 ## 7. Expected outcome under F01
 
-With F01 = +2000 ms on every payment and R01 timeout ≪ 2000 ms:
+With F01 = +2000 ms on every payment and R01 `timeout_ms = 300`:
 
 ```text
 latency p95     ↓  (containment)
@@ -213,33 +201,25 @@ Successful recovery (latency ∧ availability) is **not** expected from timeout-
 
 ---
 
-## 8. Availability guardrail (reference — do not redefine here)
+## 8. Availability guardrail (frozen in protocol-freeze)
 
-R01 does **not** redefine recovery success. Outcome classification uses the frozen dual rule in [`protocol-freeze.md`](protocol-freeze.md) §4.1:
+Outcome classification uses [`protocol-freeze.md`](protocol-freeze.md) §4.1:
 
 ```text
 success_rate =
-  successful order-processing rate
-  over the same 30 s evaluation window
-
-PromQL (canonical):
   sum(rate(orders_processing_total{job="order-service",result="success"}[30s]))
   /
   sum(rate(orders_processing_total{job="order-service"}[30s]))
 
-X_success (availability threshold) =
-  derived from E000 controlled baseline
-  (candidate 99% in protocol-freeze; finalize with characterization)
+X_success = 99%
 ```
 
-| Latency (2-of-3) | Success ≥ X_success | Class |
-|------------------|---------------------|-------|
+| Latency (2-of-3) | Success ≥ 99% | Class |
+|------------------|---------------|-------|
 | p95 < 500 ms | yes | SUCCESSFUL RECOVERY (T3) |
 | p95 < 500 ms | no | PERFORMANCE CONTAINMENT (T3c) |
 | p95 ≥ 500 ms | yes | NOT RECOVERED |
 | p95 ≥ 500 ms | no | DEGRADED |
-
-Until `X_success`, `timeout_ms`, and actuator bounds are published from baseline characterization, this remediation design is **not** complete for execution.
 
 ---
 
@@ -251,7 +231,7 @@ Until `X_success`, `timeout_ms`, and actuator bounds are published from baseline
 | `remediation_active{action="payment_timeout"}` | R01 engaged (T2 evidence) |
 | `payment_timeouts_total` | Timeout cutting dependency waits |
 | `order_processing_duration_seconds` | Latency SLI |
-| `orders_processing_total{result}` | Input to availability guardrail (§8 / protocol-freeze) |
+| `orders_processing_total{result}` | Input to availability guardrail (§8) |
 
 Experiment identity stays in annotations / artifacts — not high-cardinality labels.
 
@@ -263,9 +243,9 @@ Experiment identity stays in annotations / artifacts — not high-cardinality la
 |----|---------|----|-------------|
 | E000 | Baseline | None | None |
 | E001 | Fault characterization | None | Manual fault off |
-| **E002** | Embedded containment | Embedded | **R01 fixed timeout** |
-| **E003** | External containment | External | **R01 fixed timeout** |
-| E004 | Decision quality | Either / both | **R01-adaptive** (`Tmin`–`Tmax`) |
+| **E002** | Embedded containment | Embedded | **R01 timeout = 300 ms** |
+| **E003** | External containment | External | **R01 timeout = 300 ms** |
+| E004 | Decision quality | Either / both | **R01-adaptive** (`250`–`450`) |
 | E005 | Full recovery / shedding | TBD | R01b (circuit + fallback) — separate study |
 
 Separated research questions:
@@ -276,8 +256,6 @@ Separated research questions:
 | E004 | Does the AI make better **remediation parameter** decisions? |
 | E005 | Can the system achieve **functional recovery** despite dependency failure? |
 
-E002 and E003 are a **paired placement comparison**. E004 and E005 must not be conflated with E002.
-
 ---
 
 ## 11. Explicitly out of scope for R01 / E002
@@ -287,12 +265,13 @@ E002 and E003 are a **paired placement comparison**. E004 and E005 must not be c
 - Circuit-breaker half-open policies beyond the fixed timeout
 - AI-chosen `timeout_ms` (E004 — R01-adaptive)
 - Declaring recovery from latency alone
-- Choosing `timeout_ms` before payment-tail characterization
+- Implementing the actuator before a dedicated implementation task
 
 ---
 
 ## Related documents
 
+- Parameter characterization: [`r01-parameter-characterization.md`](r01-parameter-characterization.md)  
 - Outcome taxonomy, T3 / T3c, availability guardrail: [`protocol-freeze.md`](protocol-freeze.md)  
 - Recovery criteria: [`recovery-criteria.md`](recovery-criteria.md)  
 - Fault F01: [`fault-matrix.md`](fault-matrix.md), [`../fault-injector/README.md`](../fault-injector/README.md)  

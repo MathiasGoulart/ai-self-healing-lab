@@ -229,16 +229,19 @@ Observed (2026-08-11): TTD = 60 s; TTR = 240 s (manual deactivation; not self-he
 | Field | Value |
 |-------|-------|
 | Fault | F01 medium / +2000 ms (remains active) |
-| Remediation | R01 runtime dependency timeout — **fixed** `timeout_ms` |
-| Status | Design frozen; parameterization pending (X / Tmin / Tmax) |
+| Remediation | R01 runtime dependency timeout — **`timeout_ms = 300`** (fixed) |
+| Bounds | `Tmin = 250`, `Tmax = 450` |
+| Availability | `X_success = 99%` |
+| Status | **Parameters frozen**; actuator not implemented; not executed |
 | E002 | Embedded AI |
 | E003 | External Agent |
 | Expected outcome | PERFORMANCE CONTAINMENT |
 | Out of scope | Fault DELETE; R01b fallback; AI-chosen timeout |
+| Characterization | [`r01-parameter-characterization.md`](r01-parameter-characterization.md) |
 
 See [`remediation-r01.md`](remediation-r01.md).
 
-Later: **E004 — R01-adaptive** (AI chooses timeout in bounds); **E005** (fallback / full recovery).
+Later: **E004 — R01-adaptive** (AI chooses timeout ∈ `[250, 450]`); **E005** (fallback / full recovery).
 
 ---
 
@@ -252,7 +255,7 @@ Later: **E004 — R01-adaptive** (AI chooses timeout in bounds); **E005** (fallb
 6. Recovery criteria envelope published from baseline  
 7. Telemetry scrape healthy for the experiment window  
 8. Shared RemediationController available; FaultController **not** used as remediation  
-9. `timeout_ms` / `Tmin` / `Tmax` frozen before the run  
+9. R01 parameters frozen: `timeout_ms = 300`, `Tmin = 250`, `Tmax = 450`, `X_success = 99%`  
 
 ---
 
@@ -265,7 +268,7 @@ Later: **E004 — R01-adaptive** (AI chooses timeout in bounds); **E005** (fallb
 | 2A | Fault injector F01 |
 | 2B | Protocol freeze (this document set) |
 | E001 | Fault characterization (**executed** 2026-08-11) |
-| R01 design | Runtime dependency timeout + dual-outcome recovery (2026-08-12); parameterization pending |
+| R01 freeze | Runtime dependency timeout (`300` / `250`–`450`) + dual-outcome recovery + `X_success = 99%` (2026-08-12) |
 | 3–4 | Embedded / External MAPE-K implementations |
 | E002 / E003 | Paired containment comparison (R01 fixed) |
 | E004 / E005 | Adaptive timeout; fallback / full recovery |

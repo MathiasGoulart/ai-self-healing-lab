@@ -1,12 +1,12 @@
 # Experimental Protocol Freeze (Phase 2B)
 
 **Document type:** Frozen experimental protocol  
-**Status:** Frozen — **E001 EXECUTED** (2026-08-11); **E002+ dual-outcome recovery design frozen** (2026-08-12); R01 parameterization pending  
-**Date:** 2026-08-11 (E001); amended 2026-08-12 (R01 / dual-outcome recovery)
+**Status:** Frozen — **E001 EXECUTED** (2026-08-11); **E002+ dual-outcome recovery + R01 parameters frozen** (2026-08-12)  
+**Date:** 2026-08-11 (E001); amended 2026-08-12 (R01 / dual-outcome recovery / parameter freeze)
 
 This document freezes the measurement and health-evaluation model used for E001 characterization and later Embedded AI vs External Agent comparisons.
 
-**E002 remediation:** [`remediation-r01.md`](remediation-r01.md) (runtime dependency timeout / containment; design frozen, parameterization pending).
+**E002 remediation:** [`remediation-r01.md`](remediation-r01.md) (runtime dependency timeout / containment; parameters frozen). Characterization: [`r01-parameter-characterization.md`](r01-parameter-characterization.md).
 
 ---
 
@@ -154,7 +154,7 @@ Use `job="order-service"` (same scrape convention as the primary latency SLI / E
 | Parameter | Value |
 |-----------|-------|
 | Sampling window | **30 seconds** |
-| Success threshold **X** | **99%** (candidate freeze; E000-R6/R7/R8 k6 process→PAID = 100% / 0 fails) |
+| Success threshold **X** (`X_success`) | **99%** (frozen; E000-R6/R7/R8 observed healthy success = 100%) |
 | Evaluation | **2 of 3** rolling windows must satisfy **both** conditions for SUCCESSFUL RECOVERY |
 
 **Outcome classes:**
@@ -372,19 +372,23 @@ Results: [`../load-testing/experiments/E001/RESULTS.md`](../load-testing/experim
 | Field | Value |
 |-------|-------|
 | Remediation | **R01** — runtime dependency timeout ([`remediation-r01.md`](remediation-r01.md)) |
-| Parameter | `timeout_ms = X` **fixed** (same Embedded / External); X **pending** payment-tail characterization |
-| Actuator | Shared `RemediationController`; bounds `Tmin ≤ X ≤ Tmax` (pending) |
-| Status | Design frozen; parameterization pending — do not implement before X / bounds |
+| Parameter | `timeout_ms = **300**` **fixed** (same Embedded / External) |
+| Actuator bounds | `Tmin = **250**`, `Tmax = **450**` |
+| Availability guardrail | `X_success = **99%**` (§4.1) |
+| Status | **Parameters frozen**; actuator not implemented; E002/E003 not executed |
+| Characterization | [`r01-parameter-characterization.md`](r01-parameter-characterization.md) |
 | Forbidden | Mutating `/faults*`; fallback / stub PAID (R01b → E005) |
-| E002 | Embedded AI + R01 fixed |
-| E003 | External Agent + R01 fixed |
+| E002 | Embedded AI + R01 (`timeout_ms = 300`) |
+| E003 | External Agent + R01 (`timeout_ms = 300`) |
 | Expected class under F01+R01 | **PERFORMANCE CONTAINMENT** |
+
+Timeout justification (observed only): pooled healthy payment p99 = **164.2 ms**; max per-run p99 = **187.8 ms**; `300 > 187.8` and `300 < 500`.
 
 Later (not E002):
 
 | ID | Focus |
 |----|-------|
-| E004 | **R01-adaptive** — AI chooses `timeout_ms ∈ [Tmin, Tmax]` (decision quality) |
+| E004 | **R01-adaptive** — AI chooses `timeout_ms ∈ [250, 450]` (decision quality) |
 | E005 | R01b fallback / capability shedding (full recovery study) |
 
 ---
@@ -398,6 +402,7 @@ See [`ai-comparison-metrics.md`](ai-comparison-metrics.md).
 ## Related documents
 
 - [`remediation-r01.md`](remediation-r01.md)  
+- [`r01-parameter-characterization.md`](r01-parameter-characterization.md)  
 - [`recovery-criteria.md`](recovery-criteria.md)  
 - [`metrics.md`](metrics.md)  
 - [`experimental-protocol.md`](experimental-protocol.md)  
