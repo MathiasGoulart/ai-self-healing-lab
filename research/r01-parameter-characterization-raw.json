@@ -1,0 +1,67 @@
+{
+  "runs": {
+    "E000-R6": {
+      "p50": 0.008431,
+      "p95": 0.042202,
+      "p99": 0.175,
+      "count": 6000.0,
+      "sum": 89.420992,
+      "highest_finite_bucket_with_obs_s": 5.0,
+      "max_proxy_ms": 5000.0,
+      "proc_success": 6000.0,
+      "proc_failure": null,
+      "proc_total": 6000.0,
+      "pay_success": 6000.0,
+      "pay_failure": null
+    },
+    "E000-R7": {
+      "p50": 0.00845,
+      "p95": 0.039585,
+      "p99": 0.098536,
+      "count": 5997.948718,
+      "sum": 79.172277,
+      "highest_finite_bucket_with_obs_s": 5.0,
+      "max_proxy_ms": 5000.0,
+      "proc_success": 5997.948718,
+      "proc_failure": null,
+      "proc_total": 5997.948718,
+      "pay_success": 5997.948718,
+      "pay_failure": null
+    },
+    "E000-R8": {
+      "p50": 0.008321,
+      "p95": 0.04391,
+      "p99": 0.187843,
+      "count": 6001.025641,
+      "sum": 93.639905,
+      "highest_finite_bucket_with_obs_s": 5.0,
+      "max_proxy_ms": 5000.0,
+      "proc_success": 6001.025641,
+      "proc_failure": null,
+      "proc_total": 6001.025641,
+      "pay_success": 6001.025641,
+      "pay_failure": null
+    }
+  },
+  "pooled_r6_to_r8": {
+    "p50": 0.0084,
+    "p95": 0.041907,
+    "p99": 0.164226,
+    "count": 17993.79235,
+    "highest_finite_bucket_with_obs_s": 5.0
+  },
+  "windows": {
+    "E000-R6": {
+      "start": "2026-08-11T20:22:33.775000+00:00",
+      "end": "2026-08-11T20:32:33.826000+00:00"
+    },
+    "E000-R7": {
+      "start": "2026-08-11T20:32:53.972000+00:00",
+      "end": "2026-08-11T20:42:54.084000+00:00"
+    },
+    "E000-R8": {
+      "start": "2026-08-11T20:43:14.283000+00:00",
+      "end": "2026-08-11T20:53:14.401000+00:00"
+    }
+  }
+}
