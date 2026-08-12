@@ -1,0 +1,1 @@
+{"faults":[{"fault":"payment_latency","severity":"medium","parameter_ms":2000,"active":true,"activated_at":"2026-08-12T21:24:47.830Z"}]}

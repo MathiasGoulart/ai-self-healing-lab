@@ -1,0 +1,21 @@
+{
+  "test": "R01-F01-SMOKE",
+  "ai": false,
+  "e002": false,
+  "environment": "local-docker-compose",
+  "timestamp_utc": "2026-08-12T21:24:51Z",
+  "results": {
+    "baseline_ms": 75,
+    "f01_only_ms": 2065,
+    "f01_only_status": "PAID",
+    "f01_r01_ms": 377,
+    "f01_r01_http": 502,
+    "payment_timeouts_before": 0,
+    "payment_timeouts_after": 1,
+    "coexistence": "fault_injection_active=1 AND remediation_active=1",
+    "f01_still_active_after_r01": true,
+    "recovery_ms": 48,
+    "recovery_status": "PAID"
+  },
+  "verdict": "PASS"
+}

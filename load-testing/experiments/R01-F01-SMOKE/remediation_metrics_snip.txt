@@ -1,0 +1,9 @@
+# HELP payment_timeouts_total Total payment client calls aborted by R01 runtime dependency timeout
+# TYPE payment_timeouts_total counter
+payment_timeouts_total{service="order-service"} 0
+# HELP remediation_active Whether a remediation actuator is currently engaged (1=on, 0=off)
+# TYPE remediation_active gauge
+remediation_active{action="payment_timeout",service="order-service"} 1
+# HELP remediation_payment_timeout_ms Configured R01 payment timeout in milliseconds (0 when inactive)
+# TYPE remediation_payment_timeout_ms gauge
+remediation_payment_timeout_ms{service="order-service"} 300

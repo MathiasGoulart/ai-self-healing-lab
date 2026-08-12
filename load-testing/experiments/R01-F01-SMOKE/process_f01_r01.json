@@ -1,0 +1,1 @@
+{"statusCode":502,"error":"Bad Gateway","message":"Payment request timed out after 300ms (R01)","remediation":"payment_timeout"}

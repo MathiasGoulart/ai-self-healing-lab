@@ -1,0 +1,3 @@
+# HELP fault_injection_active Whether a named experimental fault is currently active (1) or not (0)
+# TYPE fault_injection_active gauge
+fault_injection_active{fault="payment_latency",severity="medium",service="payment-service"} 1
