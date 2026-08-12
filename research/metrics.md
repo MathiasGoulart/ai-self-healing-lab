@@ -105,8 +105,9 @@ where:
 |--------|---------|
 | T0 | Fault activation (FaultController) |
 | T1 | Degradation detected (2-of-3 primary SLI rule) |
-| T2 | Recovery action initiated |
-| T3 | Recovery confirmed (2-of-3 recovery rule) |
+| T2 | Remediation action initiated (E002+: R01; E001: N/A) |
+| T3 | **SUCCESSFUL RECOVERY**: ≥2 of latest 3 windows each have `p95 < 500` **∧** `success ≥ 99%` (same window); E001: latency-only recovery after manual fault off |
+| T3c | **PERFORMANCE CONTAINMENT**: ≥2 of latest 3 windows each have `p95 < 500` **∧** `success < 99%`; E001: N/A |
 
 ```text
 TTD =
@@ -148,7 +149,11 @@ TTR =
 AI issued an action
 ```
 
-An action is an **Execute** step (T2). Recovery is a **state** (T3) relative to predefined criteria ([`recovery-criteria.md`](recovery-criteria.md)): **2 of 3** thirty-second windows with order-processing p95 **<** 500 ms.
+An action is an **Execute** step (T2). Recovery is a **state** (T3) relative to predefined criteria ([`recovery-criteria.md`](recovery-criteria.md) / [`protocol-freeze.md`](protocol-freeze.md)):
+
+- **E001:** 2 of 3 windows with order-processing p95 **<** 500 ms (latency only; after manual fault deactivation).
+- **E002+ SUCCESSFUL RECOVERY (T3):** `recovery_window_i = (p95_i < 500 ms) AND (success_rate_i >= 99%)`, then `count(recovery_window_i) >= 2` over the latest 3 windows. Both conditions must hold in the **same** window.
+- **E002+ PERFORMANCE CONTAINMENT (T3c):** same structure with `(p95_i < 500 ms) AND (success_rate_i < 99%)`.
 
 ### Requirements
 

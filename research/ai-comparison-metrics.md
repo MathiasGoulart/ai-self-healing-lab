@@ -29,17 +29,39 @@ Was the detected root cause correctly identified as the **F01 / payment dependen
 
 ## Recovery
 
-### TTR — Time To Recovery
+### TTR — Time To Recovery (successful)
 
 ```text
-TTR = recovery confirmation time (T3) − fault activation time (T0)
+TTR = T3 − T0
 ```
 
-T3 requires the frozen 2-of-3 recovery rule (not merely issuing an action).
+**T3** requires **SUCCESSFUL RECOVERY**: at least **2 of the latest 3** thirty-second windows each satisfy `(p95 < 500 ms) AND (success ≥ 99%)` in that **same** window — not merely issuing an action, and not AND-ing two independent 2-of-3 checks. See [`protocol-freeze.md`](protocol-freeze.md) §4.1.
+
+### TTRc — Time To Containment
+
+```text
+TTRc = T3c − T0
+```
+
+**T3c** is recorded when **PERFORMANCE CONTAINMENT** is first satisfied (latency recovered, availability guardrail violated).
+
+### Decision / action latency
+
+```text
+T2 − T1     time from degradation detection to remediation initiation
+T3 − T2     time from action to successful recovery (if any)
+T3c − T2    time from action to containment (if any)
+```
+
+### Outcome class
+
+One of: `SUCCESSFUL RECOVERY` | `PERFORMANCE CONTAINMENT` | `NOT RECOVERED` | `DEGRADED`.
+
+Under F01 + R01 (`timeout_ms = 300`), **PERFORMANCE CONTAINMENT** is the expected class ([`remediation-r01.md`](remediation-r01.md)).
 
 ### Action Correctness
 
-Was the recovery action appropriate and successful relative to the fault and recovery criteria?
+Was the recovery action appropriate relative to the fault and protocol (R01 activated; FaultController untouched; actuator bounds respected)?
 
 ---
 
