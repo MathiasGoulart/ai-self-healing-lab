@@ -9,8 +9,8 @@ import { catchError, finalize, tap } from 'rxjs/operators';
 import { Request, Response } from 'express';
 import { MetricsService } from './metrics.service';
 
-/** Paths excluded from experimental HTTP workload metrics (probes + scrape). */
-const EXCLUDED_PATH_PREFIXES = ['/health', '/metrics'];
+/** Paths excluded from experimental HTTP workload metrics (probes + scrape + control). */
+const EXCLUDED_PATH_PREFIXES = ['/health', '/metrics', '/remediation'];
 
 @Injectable()
 export class HttpMetricsInterceptor implements NestInterceptor {

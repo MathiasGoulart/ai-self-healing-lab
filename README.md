@@ -82,6 +82,8 @@ cat load-testing/README.md
 * **Phase 2A** — Fault injection framework + F01 payment latency
 * **Phase 2B** — Experimental protocol freeze before E001
 * **E001** — Fault characterization (**executed** 2026-08-11)
+* **R01 actuator** — Runtime payment timeout in Order Service (**implemented**; E002 not executed)
+* **E002 / E003** — Embedded vs External containment (not executed)
 * **Phase 2** — Remaining fault types (F02+)
 * **Phase 3** — Embedded AI
 * **Phase 4** — External AI Agent

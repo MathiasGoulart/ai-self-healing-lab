@@ -37,6 +37,35 @@ PENDING → PROCESSING → PAID
 
 ---
 
+## R01 remediation actuator (runtime payment timeout)
+
+Shared containment actuator for E002+ ([`../../research/remediation-r01.md`](../../research/remediation-r01.md)).
+
+```text
+Embedded AI  → RemediationService (in-process)
+External/ops → HTTP /remediation* → RemediationService
+                 → PaymentClient AbortSignal.timeout(timeout_ms)
+```
+
+**ClusterIP / port-forward only — no public Ingress.**
+
+```bash
+# Inspect
+curl http://127.0.0.1:3000/remediation
+
+# Activate R01 (E002 fixed value = 300; bounds [250, 450])
+curl -X POST http://127.0.0.1:3000/remediation/payment_timeout \
+  -H 'content-type: application/json' \
+  -d '{"enabled":true,"timeout_ms":300}'
+
+# Clear
+curl -X DELETE http://127.0.0.1:3000/remediation/payment_timeout
+```
+
+Metrics: `remediation_active{action="payment_timeout"}`, `remediation_payment_timeout_ms`, `payment_timeouts_total`.
+
+---
+
 ## How to run
 
 From this directory:

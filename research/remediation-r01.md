@@ -1,7 +1,7 @@
 # R01 — Runtime Dependency Timeout (Containment)
 
 **Document type:** Experimental protocol (remediation freeze for E002+)  
-**Status:** Parameters frozen — actuator not implemented; E002/E003 not executed  
+**Status:** Parameters frozen — **actuator implemented** in Order Service; E002/E003 **not executed**  
 **Date:** 2026-08-12  
 **Characterization:** [`r01-parameter-characterization.md`](r01-parameter-characterization.md)
 
@@ -168,25 +168,39 @@ E002/E003 fixed value **300** ∈ `[250, 450]`.
 Both placements execute the **same** remediation through the **same** abstraction:
 
 ```text
-RemediationController
-        │
-        └── setPaymentTimeout(timeout_ms) / clearPaymentTimeout()
+Embedded AI ─────┐
+                 ▼
+        RemediationService      ← common abstraction (Order Service)
+                 │
+                 ▼
+       RemediationController
+                 │
+                 ▼
+          PaymentClient
+
+External Agent / ops ──► HTTP /remediation* ──► RemediationService (same path)
 ```
 
 | Placement | Role |
 |-----------|------|
-| Embedded AI | Decides; invokes the shared remediation API / service |
-| External Agent | Decides; invokes the **same** remediation API / service |
+| Embedded AI | Decides; invokes **RemediationService** in-process |
+| External Agent | Decides; invokes the **same** service via HTTP adapter |
 
-Do **not** give Embedded a private in-process shortcut that External cannot use. Decision origin differs; actuation path is shared.
+Do **not** give Embedded a private shortcut that External cannot use. Decision origin differs; actuation path is shared.
 
-Conceptual control surface (to be implemented later):
+### HTTP adapter (ClusterIP / internal only)
 
 ```text
 GET    /remediation
 POST   /remediation/payment_timeout   { "enabled": true, "timeout_ms": 300 }
 DELETE /remediation/payment_timeout
 ```
+
+Order Service **ClusterIP only** — **no public Ingress** (same rule as Payment Service `/faults*`). Access via in-cluster DNS or `kubectl port-forward`.
+
+Implementation: [`../application/order-service/src/remediation/`](../application/order-service/src/remediation/)
+
+`setPaymentTimeout(timeout_ms)` accepts any value in `[250, 450]`; E002/E003 callers pass the fixed constant **300**.
 
 ---
 
@@ -246,9 +260,19 @@ X_success = 99%
 |--------|------|
 | `fault_injection_active{fault="payment_latency"}` | Fault still ON (ground truth) |
 | `remediation_active{action="payment_timeout"}` | R01 engaged (T2 evidence) |
+| `remediation_payment_timeout_ms` | Configured timeout (0 when inactive) |
 | `payment_timeouts_total` | Timeout cutting dependency waits |
 | `order_processing_duration_seconds` | Latency SLI |
 | `orders_processing_total{result}` | Input to availability guardrail (§8) |
+
+Future **k3s smoke / E002 preflight** must assert coexistence:
+
+```text
+fault_injection_active{fault="payment_latency"} = 1
+remediation_active{action="payment_timeout"} = 1
+```
+
+This proves R01 does **not** deactivate F01. Local e2e uses a mock payment server without FaultController and cannot assert this pair.
 
 Experiment identity stays in annotations / artifacts — not high-cardinality labels.
 
@@ -282,7 +306,7 @@ Separated research questions:
 - Circuit-breaker half-open policies beyond the fixed timeout
 - AI-chosen `timeout_ms` (E004 — R01-adaptive)
 - Declaring recovery from latency alone
-- Implementing the actuator before a dedicated implementation task
+- Public Ingress for `/remediation*` (ClusterIP / port-forward only)
 
 ---
 
