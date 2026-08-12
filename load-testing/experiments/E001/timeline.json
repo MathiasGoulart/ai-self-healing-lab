@@ -1,0 +1,67 @@
+{
+  "experiment_id": "E001",
+  "status": "executed",
+  "self_healing": false,
+  "ai_placement": null,
+  "fault": {
+    "id": "F01",
+    "name": "payment_latency",
+    "severity": "medium",
+    "parameter_ms": 2000
+  },
+  "images": {
+    "order_service": "ghcr.io/mathiasgoulart/ai-self-healing-lab/order-service:sha-fd43433",
+    "payment_service": "ghcr.io/mathiasgoulart/ai-self-healing-lab/payment-service:sha-4099043"
+  },
+  "workload": {
+    "base_url": "http://127.0.0.1:13000",
+    "rate": 10,
+    "duration": "10m",
+    "pre_allocated_vus": 40,
+    "max_vus": 120,
+    "request_timeout": "15s"
+  },
+  "load_generator": {
+    "power_source": "AC",
+    "lowpowermode": "0",
+    "sleep_prevention": "caffeinate"
+  },
+  "annotations": {
+    "E001_START": {
+      "utc": "2026-08-11T22:11:47Z",
+      "epoch": 1786486307
+    },
+    "F01_ACTIVATED": {
+      "utc": "2026-08-11T22:14:47Z",
+      "epoch": 1786486487,
+      "symbol": "T0"
+    },
+    "F01_DEACTIVATED": {
+      "utc": "2026-08-11T22:17:47Z",
+      "epoch": 1786486667
+    },
+    "E001_END": {
+      "utc": "2026-08-11T22:21:48Z",
+      "epoch": 1786486908
+    }
+  },
+  "planned_offsets_sec": {
+    "fault_activate_after_sec": 180,
+    "fault_deactivate_after_sec": 360
+  },
+  "observed_offsets_sec": {
+    "t0_minus_start": 180,
+    "deactivate_minus_start": 360,
+    "end_minus_start": 601
+  },
+  "grafana_annotations_note": "Recorded here for operator/manual Grafana annotation; not auto-posted.",
+  "evaluation": {
+    "primary_sli": "order_processing_duration_seconds_p95",
+    "sampling_window_seconds": 30,
+    "threshold_ms": 500,
+    "degradation_rule": "2_of_3_rolling_windows_p95_gt_500ms",
+    "recovery_rule": "2_of_3_rolling_windows_p95_lt_500ms",
+    "t1_t3_computed_in": "prometheus_windows.json / evaluation.json"
+  },
+  "k6_exit_code": 0
+}

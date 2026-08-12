@@ -12,10 +12,33 @@ Phase 1.5 establishes the **metrics baseline** for later comparative experiments
 
 ## Design rules
 
-1. Low-cardinality labels only (`method`, `route`, `status_code`, `result`, plus default `service`). Never `order_id`, `request_id`, or raw URLs.
+1. Low-cardinality labels only (`method`, `route`, `status_code`, `result`, plus default `service`; fault-injection metrics may use `fault` / `severity` / `action`). Never `order_id`, `request_id`, `run_id`, `experiment_id`, raw URLs, or timestamps as Prometheus labels.
 2. Histograms expose buckets; **Prometheus** computes p50/p95/p99 via `histogram_quantile`. Applications never emit percentile gauges.
 3. Kubernetes probe traffic (`/health/live`, `/health/ready`, and payment `/health*`) is **excluded** from HTTP workload metrics.
 4. Application `/metrics` = app + process/runtime metrics. Container/node metrics come from the cluster later — not from the app.
+5. Experiment identity belongs in Grafana annotations, structured logs, and experiment artifacts — not high-cardinality metric labels.
+
+## Primary SLI vs client measurements
+
+| Role | Source |
+|------|--------|
+| **Authoritative operational SLI** | Prometheus `order_processing_duration_seconds` **p95** (order-service) |
+| **Client-facing experiment measurements** | k6 HTTP / order-flow latency, checks, throughput |
+
+Degradation / recovery ground truth uses the Prometheus primary SLI with a frozen 2-of-3 × 30s rule at 500 ms ([`../research/protocol-freeze.md`](../research/protocol-freeze.md)).
+
+### Primary SLI PromQL (30s window)
+
+```promql
+histogram_quantile(
+  0.95,
+  sum by (le) (
+    rate(order_processing_duration_seconds_bucket{job="order-service"}[30s])
+  )
+)
+```
+
+Prefer `job="order-service"` on this cluster (the app `service` label may appear as `exported_service` after scrape).
 
 ## Health vs workload
 
@@ -117,6 +140,23 @@ rate(process_cpu_seconds_total{service="order-service"}[1m])
 ```
 
 HTTP latency buckets (seconds): `0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10`.
+
+## Grafana research dashboard
+
+Provisioned ConfigMap: [`../infrastructure/k3s/grafana/dashboard-ai-self-healing-lab.yaml`](../infrastructure/k3s/grafana/dashboard-ai-self-healing-lab.yaml)
+
+Includes **Primary SLI — Order Processing p95** with a **500 ms** threshold line, plus annotation documentation for E001 markers.
+
+### Experiment annotations (convention)
+
+```text
+E001_START
+F01_ACTIVATED
+F01_DEACTIVATED
+E001_END
+```
+
+Optional tags: `experiment_id=E001`, `fault=F01`, `severity=medium`, `phase=baseline|fault|recovery`.
 
 ## Intentionally removed
 

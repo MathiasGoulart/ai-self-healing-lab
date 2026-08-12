@@ -1,0 +1,6 @@
+{
+  "experiment_id": "E000-R4",
+  "classification": "POTENTIALLY_CONFOUNDED",
+  "reason": "load-generator host power-saving",
+  "notes": "The run is potentially confounded by a change in the load-generator host power state. Do not treat as definitive proof that power-saving caused the latency increase. Artifact preserved; summary.json and report.html unchanged."
+}

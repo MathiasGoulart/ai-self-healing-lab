@@ -44,6 +44,9 @@ const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export const options = {
+  // Summary percentiles for experiment artifacts (does not change workload).
+  // Authoritative degradation remains server-side order-processing p95 (protocol freeze).
+  summaryTrendStats: ['avg', 'min', 'med', 'max', 'p(90)', 'p(95)', 'p(99)'],
   scenarios: {
     baseline: {
       executor: 'constant-arrival-rate',
@@ -179,6 +182,14 @@ export function teardown(data) {
 
 export function handleSummary(data) {
   const summaryPath = `${OUT_DIR}/summary.json`;
+  let loadGenerator = null;
+  if (__ENV.LOAD_GENERATOR_JSON) {
+    try {
+      loadGenerator = JSON.parse(__ENV.LOAD_GENERATOR_JSON);
+    } catch (_) {
+      loadGenerator = { parse_error: true, raw: __ENV.LOAD_GENERATOR_JSON };
+    }
+  }
   const payload = {
     experiment_id: EXPERIMENT_ID,
     scenario: SCENARIO,
@@ -193,6 +204,7 @@ export function handleSummary(data) {
       order_service_image: ORDER_SERVICE_IMAGE,
       payment_service_image: PAYMENT_SERVICE_IMAGE,
     },
+    ...(loadGenerator ? { load_generator: loadGenerator } : {}),
     k6_summary: data,
   };
 

@@ -11,9 +11,12 @@ load-testing/
 ├── scenarios/
 │   └── baseline.js          # create → process business flow
 ├── experiments/
-│   └── E000/                # baseline experiment definition + results
+│   ├── E000/ … E000-R8/     # baseline experiment artifacts
+│   └── E001/                # F01 characterization run artifacts
 ├── reports/                 # optional shared report drop zone
 ├── run-e000.sh              # helper: capture image tags + run E000
+├── run-e000-repeats.sh      # E000 repetition helper
+├── run-e001.sh              # formal E001 (F01 activate/deactivate timeline)
 └── README.md
 ```
 
@@ -154,6 +157,9 @@ E001 END
 | `order_flow_duration` | Trend | End-to-end create+process duration (client) |
 
 Built-in k6 HTTP metrics cover per-request latency/errors.
+
+Trend summaries include **p50 (med), p90, p95, p99, max** via `summaryTrendStats`.  
+**Do not** use k6 p99 (or k6 p95) as the authoritative degradation threshold — that remains Prometheus order-processing p95 ([`../research/protocol-freeze.md`](../research/protocol-freeze.md)).
 
 ## Out of scope
 

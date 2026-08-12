@@ -24,11 +24,13 @@ The evaluation covers the **full loop** (detection, diagnosis, recovery, overhea
 
 | Topic | Document |
 |-------|----------|
+| **Protocol freeze (E001+)** | [`protocol-freeze.md`](protocol-freeze.md) |
 | Research questions | [`questions.md`](questions.md) |
 | Hypotheses | [`hypotheses.md`](hypotheses.md) |
 | Metric definitions (TTD, TTR, …) | [`metrics.md`](metrics.md) |
 | Experimental protocol & baseline repeats | [`experimental-protocol.md`](experimental-protocol.md) |
-| Recovery criteria framework | [`recovery-criteria.md`](recovery-criteria.md) |
+| Recovery / health state machine | [`recovery-criteria.md`](recovery-criteria.md) |
+| AI comparison metrics | [`ai-comparison-metrics.md`](ai-comparison-metrics.md) |
 | Candidate fault matrix | [`fault-matrix.md`](fault-matrix.md) |
 | Future self-healing metrics | [`self-healing-metrics.md`](self-healing-metrics.md) |
 | MAPE-K architecture | [`../docs/architecture.md`](../docs/architecture.md) |

@@ -1,0 +1,6 @@
+{
+  "experiment_id": "E000-R6",
+  "classification": "CONTROLLED",
+  "power_state": "controlled",
+  "notes": "Run under AC power with caffeinate sleep prevention. Classification relative to R1/R2 vs R3-R5 regimes is observational only; no causal claim."
+}

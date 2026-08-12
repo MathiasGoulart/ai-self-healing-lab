@@ -1,0 +1,381 @@
+{
+  "threshold_seconds": 0.5,
+  "threshold_ms": 500,
+  "rule": "rolling_2_of_3_30s_windows",
+  "t0_epoch": 1786486487,
+  "t1_degradation_detected_epoch": 1786486547,
+  "t1_utc": "2026-08-11T22:15:47Z",
+  "t2": null,
+  "t2_note": "N/A \u2014 no self-healing action",
+  "fault_deactivated_epoch": 1786486667,
+  "t3_recovery_confirmed_epoch": 1786486727,
+  "t3_utc": "2026-08-11T22:18:47Z",
+  "ttd_seconds": 60,
+  "ttr_seconds": 240,
+  "ttr_note": "Observed recovery after manual fault deactivation; not self-healing",
+  "final_state": "HEALTHY",
+  "transitions": [
+    {
+      "from": "HEALTHY",
+      "to": "DEGRADED",
+      "at_epoch": 1786486547,
+      "at_utc": "2026-08-11T22:15:47Z",
+      "rule": "2_of_3_p95_gt_500ms",
+      "trio_p95_ms": [
+        87.5,
+        2425.0,
+        2425.0
+      ]
+    },
+    {
+      "from": "DEGRADED",
+      "to": "HEALTHY",
+      "at_epoch": 1786486727,
+      "at_utc": "2026-08-11T22:18:47Z",
+      "rule": "2_of_3_p95_lt_500ms",
+      "trio_p95_ms": [
+        2425.0,
+        75.0,
+        80.625
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "at_epoch": 1786486367,
+      "at_utc": "2026-08-11T22:12:47Z",
+      "windows": [
+        1786486307,
+        1786486337,
+        1786486367
+      ],
+      "skipped": true,
+      "reason": "missing_p95",
+      "state": "HEALTHY"
+    },
+    {
+      "at_epoch": 1786486397,
+      "at_utc": "2026-08-11T22:13:17Z",
+      "windows": [
+        1786486337,
+        1786486367,
+        1786486397
+      ],
+      "trio_p95_ms": [
+        109.643,
+        62.5,
+        205.625
+      ],
+      "n_above_500ms": 0,
+      "n_below_500ms": 3,
+      "state_after": "HEALTHY",
+      "skipped": false
+    },
+    {
+      "at_epoch": 1786486427,
+      "at_utc": "2026-08-11T22:13:47Z",
+      "windows": [
+        1786486367,
+        1786486397,
+        1786486427
+      ],
+      "trio_p95_ms": [
+        62.5,
+        205.625,
+        49.855
+      ],
+      "n_above_500ms": 0,
+      "n_below_500ms": 3,
+      "state_after": "HEALTHY",
+      "skipped": false
+    },
+    {
+      "at_epoch": 1786486457,
+      "at_utc": "2026-08-11T22:14:17Z",
+      "windows": [
+        1786486397,
+        1786486427,
+        1786486457
+      ],
+      "trio_p95_ms": [
+        205.625,
+        49.855,
+        49.282
+      ],
+      "n_above_500ms": 0,
+      "n_below_500ms": 3,
+      "state_after": "HEALTHY",
+      "skipped": false
+    },
+    {
+      "at_epoch": 1786486487,
+      "at_utc": "2026-08-11T22:14:47Z",
+      "windows": [
+        1786486427,
+        1786486457,
+        1786486487
+      ],
+      "trio_p95_ms": [
+        49.855,
+        49.282,
+        87.5
+      ],
+      "n_above_500ms": 0,
+      "n_below_500ms": 3,
+      "state_after": "HEALTHY",
+      "skipped": false
+    },
+    {
+      "at_epoch": 1786486517,
+      "at_utc": "2026-08-11T22:15:17Z",
+      "windows": [
+        1786486457,
+        1786486487,
+        1786486517
+      ],
+      "trio_p95_ms": [
+        49.282,
+        87.5,
+        2425.0
+      ],
+      "n_above_500ms": 1,
+      "n_below_500ms": 2,
+      "state_after": "HEALTHY",
+      "skipped": false
+    },
+    {
+      "at_epoch": 1786486547,
+      "at_utc": "2026-08-11T22:15:47Z",
+      "windows": [
+        1786486487,
+        1786486517,
+        1786486547
+      ],
+      "trio_p95_ms": [
+        87.5,
+        2425.0,
+        2425.0
+      ],
+      "n_above_500ms": 2,
+      "n_below_500ms": 1,
+      "state_after": "DEGRADED",
+      "skipped": false
+    },
+    {
+      "at_epoch": 1786486577,
+      "at_utc": "2026-08-11T22:16:17Z",
+      "windows": [
+        1786486517,
+        1786486547,
+        1786486577
+      ],
+      "trio_p95_ms": [
+        2425.0,
+        2425.0,
+        2425.0
+      ],
+      "n_above_500ms": 3,
+      "n_below_500ms": 0,
+      "state_after": "DEGRADED",
+      "skipped": false
+    },
+    {
+      "at_epoch": 1786486607,
+      "at_utc": "2026-08-11T22:16:47Z",
+      "windows": [
+        1786486547,
+        1786486577,
+        1786486607
+      ],
+      "trio_p95_ms": [
+        2425.0,
+        2425.0,
+        2425.0
+      ],
+      "n_above_500ms": 3,
+      "n_below_500ms": 0,
+      "state_after": "DEGRADED",
+      "skipped": false
+    },
+    {
+      "at_epoch": 1786486637,
+      "at_utc": "2026-08-11T22:17:17Z",
+      "windows": [
+        1786486577,
+        1786486607,
+        1786486637
+      ],
+      "trio_p95_ms": [
+        2425.0,
+        2425.0,
+        2425.0
+      ],
+      "n_above_500ms": 3,
+      "n_below_500ms": 0,
+      "state_after": "DEGRADED",
+      "skipped": false
+    },
+    {
+      "at_epoch": 1786486667,
+      "at_utc": "2026-08-11T22:17:47Z",
+      "windows": [
+        1786486607,
+        1786486637,
+        1786486667
+      ],
+      "trio_p95_ms": [
+        2425.0,
+        2425.0,
+        2425.0
+      ],
+      "n_above_500ms": 3,
+      "n_below_500ms": 0,
+      "state_after": "DEGRADED",
+      "skipped": false
+    },
+    {
+      "at_epoch": 1786486697,
+      "at_utc": "2026-08-11T22:18:17Z",
+      "windows": [
+        1786486637,
+        1786486667,
+        1786486697
+      ],
+      "trio_p95_ms": [
+        2425.0,
+        2425.0,
+        75.0
+      ],
+      "n_above_500ms": 2,
+      "n_below_500ms": 1,
+      "state_after": "DEGRADED",
+      "skipped": false
+    },
+    {
+      "at_epoch": 1786486727,
+      "at_utc": "2026-08-11T22:18:47Z",
+      "windows": [
+        1786486667,
+        1786486697,
+        1786486727
+      ],
+      "trio_p95_ms": [
+        2425.0,
+        75.0,
+        80.625
+      ],
+      "n_above_500ms": 1,
+      "n_below_500ms": 2,
+      "state_after": "HEALTHY",
+      "skipped": false
+    },
+    {
+      "at_epoch": 1786486757,
+      "at_utc": "2026-08-11T22:19:17Z",
+      "windows": [
+        1786486697,
+        1786486727,
+        1786486757
+      ],
+      "trio_p95_ms": [
+        75.0,
+        80.625,
+        128.125
+      ],
+      "n_above_500ms": 0,
+      "n_below_500ms": 3,
+      "state_after": "HEALTHY",
+      "skipped": false
+    },
+    {
+      "at_epoch": 1786486787,
+      "at_utc": "2026-08-11T22:19:47Z",
+      "windows": [
+        1786486727,
+        1786486757,
+        1786486787
+      ],
+      "trio_p95_ms": [
+        80.625,
+        128.125,
+        49.854
+      ],
+      "n_above_500ms": 0,
+      "n_below_500ms": 3,
+      "state_after": "HEALTHY",
+      "skipped": false
+    },
+    {
+      "at_epoch": 1786486817,
+      "at_utc": "2026-08-11T22:20:17Z",
+      "windows": [
+        1786486757,
+        1786486787,
+        1786486817
+      ],
+      "trio_p95_ms": [
+        128.125,
+        49.854,
+        49.857
+      ],
+      "n_above_500ms": 0,
+      "n_below_500ms": 3,
+      "state_after": "HEALTHY",
+      "skipped": false
+    },
+    {
+      "at_epoch": 1786486847,
+      "at_utc": "2026-08-11T22:20:47Z",
+      "windows": [
+        1786486787,
+        1786486817,
+        1786486847
+      ],
+      "trio_p95_ms": [
+        49.854,
+        49.857,
+        75.357
+      ],
+      "n_above_500ms": 0,
+      "n_below_500ms": 3,
+      "state_after": "HEALTHY",
+      "skipped": false
+    },
+    {
+      "at_epoch": 1786486877,
+      "at_utc": "2026-08-11T22:21:17Z",
+      "windows": [
+        1786486817,
+        1786486847,
+        1786486877
+      ],
+      "trio_p95_ms": [
+        49.857,
+        75.357,
+        109.375
+      ],
+      "n_above_500ms": 0,
+      "n_below_500ms": 3,
+      "state_after": "HEALTHY",
+      "skipped": false
+    },
+    {
+      "at_epoch": 1786486907,
+      "at_utc": "2026-08-11T22:21:47Z",
+      "windows": [
+        1786486847,
+        1786486877,
+        1786486907
+      ],
+      "trio_p95_ms": [
+        75.357,
+        109.375,
+        75.0
+      ],
+      "n_above_500ms": 0,
+      "n_below_500ms": 3,
+      "state_after": "HEALTHY",
+      "skipped": false
+    }
+  ]
+}

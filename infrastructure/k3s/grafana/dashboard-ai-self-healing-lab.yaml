@@ -1,0 +1,349 @@
+# Grafana dashboard for AI Self-Healing Lab research.
+# Sidecar discovers ConfigMaps labeled grafana_dashboard=1 (any namespace).
+# Apply: kubectl --context rooteny-kubernetes apply -f infrastructure/k3s/grafana/dashboard-ai-self-healing-lab.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-ai-self-healing-lab
+  namespace: observability
+  labels:
+    grafana_dashboard: "1"
+    app.kubernetes.io/part-of: ai-self-healing-lab
+data:
+  ai-self-healing-lab-order.json: |-
+    {
+      "annotations": {
+        "list": [
+          {
+            "builtIn": 1,
+            "datasource": {
+              "type": "grafana",
+              "uid": "-- Grafana --"
+            },
+            "enable": true,
+            "hide": true,
+            "iconColor": "rgba(0, 211, 255, 1)",
+            "name": "Annotations & Alerts",
+            "type": "dashboard"
+          },
+          {
+            "name": "E001 experiment markers (manual)",
+            "enable": true,
+            "hide": false,
+            "iconColor": "red",
+            "datasource": {
+              "type": "grafana",
+              "uid": "-- Grafana --"
+            },
+            "type": "tags",
+            "tags": [
+              "E001",
+              "F01",
+              "E001_START",
+              "F01_ACTIVATED",
+              "F01_DEACTIVATED",
+              "E001_END"
+            ]
+          }
+        ]
+      },
+      "description": "AI Self-Healing Lab \u2014 research dashboard. Primary SLI is server-side order-processing p95.",
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 1,
+      "id": null,
+      "links": [],
+      "panels": [
+        {
+          "type": "timeseries",
+          "title": "Primary SLI \u2014 Order Processing p95",
+          "id": 1,
+          "gridPos": {
+            "h": 10,
+            "w": 24,
+            "x": 0,
+            "y": 0
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 2,
+                "fillOpacity": 10,
+                "showPoints": "never"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 0.5
+                  }
+                ]
+              },
+              "color": {
+                "mode": "palette-classic"
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "order_processing_p95"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "Order processing p95"
+                  },
+                  {
+                    "id": "custom.thresholdsStyle",
+                    "value": {
+                      "mode": "line+area"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "threshold_500ms"
+                },
+                "properties": [
+                  {
+                    "id": "displayName",
+                    "value": "Experimental threshold 500 ms"
+                  },
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "orange",
+                      "mode": "fixed"
+                    }
+                  },
+                  {
+                    "id": "custom.lineStyle",
+                    "value": {
+                      "dash": [
+                        10,
+                        10
+                      ],
+                      "fill": "dash"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single"
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "histogram_quantile(0.95, sum by (le) (rate(order_processing_duration_seconds_bucket{job=\"order-service\"}[30s])))",
+              "legendFormat": "order_processing_p95",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              }
+            },
+            {
+              "refId": "B",
+              "expr": "vector(0.5)",
+              "legendFormat": "threshold_500ms",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              }
+            }
+          ]
+        },
+        {
+          "type": "timeseries",
+          "title": "Payment client latency p95 (order-service \u2192 payment)",
+          "id": 2,
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 10
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 2,
+                "fillOpacity": 8
+              }
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "histogram_quantile(0.95, sum by (le) (rate(payment_request_duration_seconds_bucket{job=\"order-service\"}[30s])))",
+              "legendFormat": "payment_client_p95"
+            }
+          ]
+        },
+        {
+          "type": "timeseries",
+          "title": "Fault injection active (F01)",
+          "id": 3,
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 10
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "min": 0,
+              "max": 1,
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 2,
+                "fillOpacity": 20
+              }
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "fault_injection_active{job=\"payment-service\",fault=\"payment_latency\"}",
+              "legendFormat": "{{severity}}"
+            }
+          ]
+        },
+        {
+          "type": "timeseries",
+          "title": "Order HTTP p95 (server-side; not primary SLI)",
+          "id": 4,
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 18
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 5
+              }
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{job=\"order-service\"}[30s])))",
+              "legendFormat": "http_p95"
+            }
+          ]
+        },
+        {
+          "type": "timeseries",
+          "title": "Order create / process rate",
+          "id": 5,
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 18
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "ops",
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 1,
+                "fillOpacity": 5
+              }
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum(rate(orders_created_total{job=\"order-service\"}[1m]))",
+              "legendFormat": "orders_created/s"
+            },
+            {
+              "refId": "B",
+              "expr": "sum(rate(orders_processing_total{job=\"order-service\"}[1m]))",
+              "legendFormat": "orders_processing/s"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "title": "Annotation convention",
+          "id": 6,
+          "gridPos": {
+            "h": 6,
+            "w": 24,
+            "x": 0,
+            "y": 26
+          },
+          "options": {
+            "mode": "markdown",
+            "content": "### Experiment annotations (manual)\n\nUse Grafana annotations / tags:\n\n- `E001_START`\n- `F01_ACTIVATED`\n- `F01_DEACTIVATED`\n- `E001_END`\n\nSuggested tags: `experiment_id=E001`, `fault=F01`, `severity=medium`, `phase=baseline|fault|recovery`.\n\n**Primary SLI** = server-side order-processing p95. Experimental threshold = **500 ms** (study-specific).  \nDegradation / recovery = **2 of 3** \u00d7 30s windows (protocol freeze \u2014 not computed in this dashboard).\n"
+          }
+        }
+      ],
+      "refresh": "10s",
+      "schemaVersion": 39,
+      "tags": [
+        "ai-self-healing-lab",
+        "research",
+        "E000",
+        "E001"
+      ],
+      "templating": {
+        "list": []
+      },
+      "time": {
+        "from": "now-1h",
+        "to": "now"
+      },
+      "timepicker": {},
+      "timezone": "browser",
+      "title": "AI Self-Healing Lab \u2014 Order Processing",
+      "uid": "ai-self-healing-lab-order",
+      "version": 1
+    }

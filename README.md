@@ -62,21 +62,26 @@ cat load-testing/README.md
 |----------|----------|
 | [`research/questions.md`](research/questions.md) | RQ1–RQ5 |
 | [`research/hypotheses.md`](research/hypotheses.md) | H1–H5 (falsifiable) |
+| [`research/protocol-freeze.md`](research/protocol-freeze.md) | **Frozen** SLI / degradation / recovery / E001 protocol |
 | [`research/metrics.md`](research/metrics.md) | TTD, TTR, dependent variables |
+| [`research/recovery-criteria.md`](research/recovery-criteria.md) | Health state machine + 500 ms / 2-of-3 rules |
+| [`research/ai-comparison-metrics.md`](research/ai-comparison-metrics.md) | Future Embedded vs External metrics |
 | [`research/experimental-protocol.md`](research/experimental-protocol.md) | Controls, baseline repeats, paired design |
-| [`research/recovery-criteria.md`](research/recovery-criteria.md) | Recovery framework (thresholds from baseline) |
 | [`research/fault-matrix.md`](research/fault-matrix.md) | Candidate faults F01–F06 |
 | [`research/self-healing-metrics.md`](research/self-healing-metrics.md) | Future self-healing Prometheus metrics |
 | [`research/methodology.md`](research/methodology.md) | Methodology overview |
 | [`docs/architecture.md`](docs/architecture.md) | System context + MAPE-K mapping |
 | [`docs/architectural-comparison.md`](docs/architectural-comparison.md) | Embedded vs External trade-offs |
+| [`docs/observability.md`](docs/observability.md) | Telemetry + Primary SLI |
 
 ---
 
 ## Future experimental phases
 
-* **Baseline repeats** — E000-R1…R5; derive recovery envelopes
-* **Phase 2A** — Fault injection framework + F01 payment latency *(current)*
+* **Baseline repeats** — E000-R1…R8; R6–R8 primary controlled baseline (descriptive)
+* **Phase 2A** — Fault injection framework + F01 payment latency
+* **Phase 2B** — Experimental protocol freeze before E001
+* **E001** — Fault characterization (**executed** 2026-08-11)
 * **Phase 2** — Remaining fault types (F02+)
 * **Phase 3** — Embedded AI
 * **Phase 4** — External AI Agent
