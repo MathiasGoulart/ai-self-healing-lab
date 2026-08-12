@@ -1,9 +1,17 @@
 # R01 — Runtime Dependency Timeout (Containment)
 
 **Document type:** Experimental protocol (remediation freeze for E002+)  
-**Status:** **Parameters frozen** — actuator **not implemented**  
+**Status:** Parameters frozen — actuator not implemented; E002/E003 not executed  
 **Date:** 2026-08-12  
 **Characterization:** [`r01-parameter-characterization.md`](r01-parameter-characterization.md)
+
+```text
+R01:                 Runtime Dependency Timeout
+E002/E003:           timeout_ms = 300 ms (fixed; AI must NOT choose)
+Actuator bounds:     250 ms ≤ timeout_ms ≤ 450 ms
+Availability:        success ≥ 99%  (X_success)
+E004:                AI-selected timeout within [250, 450] ms
+```
 
 This document freezes the first legitimate self-healing remediation for F01 (payment latency). It is intentionally **not** fault deactivation.
 

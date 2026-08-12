@@ -229,19 +229,20 @@ Observed (2026-08-11): TTD = 60 s; TTR = 240 s (manual deactivation; not self-he
 | Field | Value |
 |-------|-------|
 | Fault | F01 medium / +2000 ms (remains active) |
-| Remediation | R01 runtime dependency timeout — **`timeout_ms = 300`** (fixed) |
-| Bounds | `Tmin = 250`, `Tmax = 450` |
-| Availability | `X_success = 99%` |
-| Status | **Parameters frozen**; actuator not implemented; not executed |
+| Remediation | **R01 — Runtime Dependency Timeout** |
+| E002 / E003 timeout | **`timeout_ms = 300` ms** (fixed; AI does **not** choose) |
+| Actuator bounds | **250 ms ≤ timeout_ms ≤ 450 ms** |
+| Availability | **`X_success = 99%`** (success ≥ 99%) |
+| Actuator / execution | Not implemented / not executed |
 | E002 | Embedded AI |
 | E003 | External Agent |
 | Expected outcome | PERFORMANCE CONTAINMENT |
-| Out of scope | Fault DELETE; R01b fallback; AI-chosen timeout |
+| Forbidden | FaultController `/faults*` as remediation; R01b fallback; AI-chosen timeout |
 | Characterization | [`r01-parameter-characterization.md`](r01-parameter-characterization.md) |
 
 See [`remediation-r01.md`](remediation-r01.md).
 
-Later: **E004 — R01-adaptive** (AI chooses timeout ∈ `[250, 450]`); **E005** (fallback / full recovery).
+Later: **E004 — R01-adaptive** (AI chooses timeout ∈ `[250, 450]` ms); **E005** (fallback / full recovery).
 
 ---
 

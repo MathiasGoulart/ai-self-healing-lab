@@ -105,8 +105,9 @@ where:
 |--------|---------|
 | T0 | Fault activation (FaultController) |
 | T1 | Degradation detected (2-of-3 primary SLI rule) |
-| T2 | Recovery action initiated |
-| T3 | Recovery confirmed (2-of-3 recovery rule) |
+| T2 | Remediation action initiated (E002+: R01; E001: N/A) |
+| T3 | **SUCCESSFUL RECOVERY** (E002+: p95 < 500 ms **and** success ≥ 99%, 2-of-3); E001: latency-only recovery after manual fault off |
+| T3c | **PERFORMANCE CONTAINMENT** (E002+: p95 < 500 ms **and** success < 99%; E001: N/A) |
 
 ```text
 TTD =
@@ -148,7 +149,10 @@ TTR =
 AI issued an action
 ```
 
-An action is an **Execute** step (T2). Recovery is a **state** (T3) relative to predefined criteria ([`recovery-criteria.md`](recovery-criteria.md)): **2 of 3** thirty-second windows with order-processing p95 **<** 500 ms.
+An action is an **Execute** step (T2). Recovery is a **state** (T3) relative to predefined criteria ([`recovery-criteria.md`](recovery-criteria.md) / [`protocol-freeze.md`](protocol-freeze.md)):
+
+- **E001:** 2 of 3 windows with order-processing p95 **<** 500 ms (latency only; after manual fault deactivation).
+- **E002+:** 2 of 3 windows with p95 **<** 500 ms **and** success rate **≥ 99%** (**SUCCESSFUL RECOVERY**). Latency recovered with success **< 99%** is **PERFORMANCE CONTAINMENT** (T3c), not T3.
 
 ### Requirements
 

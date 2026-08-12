@@ -75,12 +75,12 @@ Same 2-of-3 rolling windows. Classify:
 
 | Latency | Success rate | Class | Timestamp |
 |---------|--------------|-------|-----------|
-| p95 < 500 | ≥ X | **SUCCESSFUL RECOVERY** | **T3** |
-| p95 < 500 | < X | **PERFORMANCE CONTAINMENT** | **T3c** |
-| p95 ≥ 500 | ≥ X | **NOT RECOVERED** | — |
-| p95 ≥ 500 | < X | **DEGRADED** | — |
+| p95 < 500 | ≥ **99%** | **SUCCESSFUL RECOVERY** | **T3** |
+| p95 < 500 | < **99%** | **PERFORMANCE CONTAINMENT** | **T3c** |
+| p95 ≥ 500 | ≥ **99%** | **NOT RECOVERED** | — |
+| p95 ≥ 500 | < **99%** | **DEGRADED** | — |
 
-Action initiation = **T2**. Fault must remain active (`fault_injection_active = 1`).
+Action initiation = **T2**. Fault must remain active (`fault_injection_active = 1`). FaultController must **not** be used as remediation.
 
 R01 (runtime dependency timeout, `timeout_ms = 300`) under F01 is **expected** to land in **PERFORMANCE CONTAINMENT**. Falling success rate is an intended cost of fail-fast containment, not a bug. See [`remediation-r01.md`](remediation-r01.md).
 

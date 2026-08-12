@@ -35,7 +35,7 @@ Was the detected root cause correctly identified as the **F01 / payment dependen
 TTR = T3 − T0
 ```
 
-**T3** requires **SUCCESSFUL RECOVERY** under the E002+ dual rule (latency p95 < 500 ms **and** success rate ≥ X, 2-of-3) — not merely issuing an action. See [`protocol-freeze.md`](protocol-freeze.md).
+**T3** requires **SUCCESSFUL RECOVERY** under the E002+ dual rule (latency p95 < 500 ms **and** success rate ≥ **99%**, 2-of-3) — not merely issuing an action. See [`protocol-freeze.md`](protocol-freeze.md).
 
 ### TTRc — Time To Containment
 

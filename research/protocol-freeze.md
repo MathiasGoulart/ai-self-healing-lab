@@ -1,12 +1,22 @@
 # Experimental Protocol Freeze (Phase 2B)
 
 **Document type:** Frozen experimental protocol  
-**Status:** Frozen — **E001 EXECUTED** (2026-08-11); **E002+ dual-outcome recovery + R01 parameters frozen** (2026-08-12)  
-**Date:** 2026-08-11 (E001); amended 2026-08-12 (R01 / dual-outcome recovery / parameter freeze)
+**Status:** Frozen — E001 executed (2026-08-11); E002+ dual-outcome recovery and R01 parameters frozen (2026-08-12)  
+**Date:** 2026-08-11; amended 2026-08-12
 
 This document freezes the measurement and health-evaluation model used for E001 characterization and later Embedded AI vs External Agent comparisons.
 
-**E002 remediation:** [`remediation-r01.md`](remediation-r01.md) (runtime dependency timeout / containment; parameters frozen). Characterization: [`r01-parameter-characterization.md`](r01-parameter-characterization.md).
+### R01 freeze summary (E002 / E003)
+
+| Item | Frozen value |
+|------|--------------|
+| Remediation | **R01 — Runtime Dependency Timeout** ([`remediation-r01.md`](remediation-r01.md)) |
+| E002 / E003 `timeout_ms` | **300 ms** (fixed; AI must **not** choose) |
+| Actuator bounds | **250 ms ≤ timeout_ms ≤ 450 ms** |
+| Availability guardrail `X_success` | **success ≥ 99%** |
+| E004 | AI may choose `timeout_ms` within **[250, 450] ms** (separate experiment) |
+
+Characterization evidence: [`r01-parameter-characterization.md`](r01-parameter-characterization.md). Actuator **not implemented**; E002/E003 **not executed**.
 
 ---
 
@@ -161,12 +171,12 @@ Use `job="order-service"` (same scrape convention as the primary latency SLI / E
 
 | Latency (2-of-3) | Success rate (2-of-3) | Class |
 |------------------|----------------------|-------|
-| p95 < 500 ms | ≥ X | **SUCCESSFUL RECOVERY** |
-| p95 < 500 ms | < X | **PERFORMANCE CONTAINMENT** |
-| p95 ≥ 500 ms | ≥ X | **NOT RECOVERED** |
-| p95 ≥ 500 ms | < X | **DEGRADED** |
+| p95 < 500 ms | ≥ **99%** | **SUCCESSFUL RECOVERY** |
+| p95 < 500 ms | < **99%** | **PERFORMANCE CONTAINMENT** |
+| p95 ≥ 500 ms | ≥ **99%** | **NOT RECOVERED** |
+| p95 ≥ 500 ms | < **99%** | **DEGRADED** |
 
-Under F01 (+2000 ms) + R01 fixed timeout ≪ 2000 ms, the **expected** class is **PERFORMANCE CONTAINMENT**. That is a valid scientific outcome, not a failed experiment.
+Under F01 (+2000 ms) + R01 `timeout_ms = 300`, the **expected** class is **PERFORMANCE CONTAINMENT**. That is a valid scientific outcome, not a failed experiment.
 
 ### 4.2 Run validity (self-healing attribution)
 
@@ -224,32 +234,17 @@ T2 ── remediation (R01)
 
 ### E001 characterization run (no AI)
 
-E001 characterizes system response to an injected fault **without** self-healing. Record:
+E001 has **no** self-healing. Timestamps:
 
 | Timestamp | Meaning for E001 |
 |-----------|------------------|
 | **T0** | Fault activated (FaultController) |
 | **T1** | Degradation detected (2-of-3 primary SLI rule) |
 | **T2** | **N/A** — no self-healing action |
-| **T3** | Recovery confirmed after **manual** fault deactivation (latency-only 2-of-3) |
+| **T3** | Latency-only recovery after **manual** fault deactivation (§4.0) |
 | **T3c** | **N/A** |
 
-```text
-T0 = fault activated
-T1 = degradation detected
-T2 = N/A — no self-healing action
-T3 = recovery confirmed after fault deactivation
-```
-
-**T3 is recorded** as *observed recovery after manual fault deactivation* — not as self-healing recovery. That distinction matters: E001 establishes
-
-```text
-fault → observable degradation → fault removal → recovery
-```
-
-before later experiments attribute outcomes to an AI/agent action (where T2, T3, T3c become meaningful).
-
-Do **not** invent a T2 or T3c for E001. Do **record** T3 when the E001 latency recovery rule is first satisfied after deactivation.
+E001 establishes `fault → degradation → fault removal → recovery`. Do **not** invent T2 or T3c for E001. Record T3 only when the E001 latency recovery rule is first satisfied after deactivation — that T3 is **not** self-healing attribution.
 
 ---
 
@@ -371,24 +366,25 @@ Results: [`../load-testing/experiments/E001/RESULTS.md`](../load-testing/experim
 
 | Field | Value |
 |-------|-------|
-| Remediation | **R01** — runtime dependency timeout ([`remediation-r01.md`](remediation-r01.md)) |
-| Parameter | `timeout_ms = **300**` **fixed** (same Embedded / External) |
-| Actuator bounds | `Tmin = **250**`, `Tmax = **450**` |
-| Availability guardrail | `X_success = **99%**` (§4.1) |
-| Status | **Parameters frozen**; actuator not implemented; E002/E003 not executed |
+| Remediation | **R01 — Runtime Dependency Timeout** ([`remediation-r01.md`](remediation-r01.md)) |
+| E002 / E003 timeout | **`timeout_ms = 300` ms** (fixed; AI does **not** choose) |
+| Actuator bounds | **250 ms ≤ timeout_ms ≤ 450 ms** |
+| Availability | **`X_success = 99%`** (§4.1) |
+| Actuator implementation | Not implemented |
+| Execution | E002 / E003 not executed |
 | Characterization | [`r01-parameter-characterization.md`](r01-parameter-characterization.md) |
-| Forbidden | Mutating `/faults*`; fallback / stub PAID (R01b → E005) |
+| Forbidden remediation | Mutating `/faults*` / FaultController (R01b fallback → E005) |
 | E002 | Embedded AI + R01 (`timeout_ms = 300`) |
 | E003 | External Agent + R01 (`timeout_ms = 300`) |
 | Expected class under F01+R01 | **PERFORMANCE CONTAINMENT** |
 
 Timeout justification (observed only): pooled healthy payment p99 = **164.2 ms**; max per-run p99 = **187.8 ms**; `300 > 187.8` and `300 < 500`.
 
-Later (not E002):
+Later (not E002 / E003):
 
 | ID | Focus |
 |----|-------|
-| E004 | **R01-adaptive** — AI chooses `timeout_ms ∈ [250, 450]` (decision quality) |
+| E004 | **R01-adaptive** — AI chooses `timeout_ms ∈ [250, 450]` ms (decision quality) |
 | E005 | R01b fallback / capability shedding (full recovery study) |
 
 ---
