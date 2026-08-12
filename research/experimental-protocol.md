@@ -195,14 +195,17 @@ Primary SLI, degradation, and recovery rules are frozen in:
 
 - [`protocol-freeze.md`](protocol-freeze.md)
 - [`recovery-criteria.md`](recovery-criteria.md)
+- Remediation R01: [`remediation-r01.md`](remediation-r01.md)
 
 Summary:
 
 ```text
-Primary SLI: order_processing_duration_seconds p95 (Prometheus)
-Window: 30s
-Degraded: 2 of 3 windows with p95 > 500 ms
-Recovered: 2 of 3 windows with p95 < 500 ms
+Degradation (all):  order_processing p95 > 500 ms, 2-of-3 × 30s
+
+E001 recovery:      p95 < 500 ms, 2-of-3          (latency only; executed)
+
+E002+ outcomes:     p95 < 500 ms AND success ≥ 99%  → SUCCESSFUL RECOVERY (T3)
+                    p95 < 500 ms AND success < 99%  → PERFORMANCE CONTAINMENT (T3c)
 ```
 
 ---
@@ -221,6 +224,24 @@ Observed (2026-08-11): TTD = 60 s; TTR = 240 s (manual deactivation; not self-he
 
 ---
 
+## E002 / E003 design (frozen protocol — not executed)
+
+| Field | Value |
+|-------|-------|
+| Fault | F01 medium / +2000 ms (remains active) |
+| Remediation | R01 runtime dependency timeout — **fixed** `timeout_ms` |
+| Status | Design frozen; parameterization pending (X / Tmin / Tmax) |
+| E002 | Embedded AI |
+| E003 | External Agent |
+| Expected outcome | PERFORMANCE CONTAINMENT |
+| Out of scope | Fault DELETE; R01b fallback; AI-chosen timeout |
+
+See [`remediation-r01.md`](remediation-r01.md).
+
+Later: **E004 — R01-adaptive** (AI chooses timeout in bounds); **E005** (fallback / full recovery).
+
+---
+
 ## Preconditions for a valid comparative run (future)
 
 1. Order Service, Payment Service, and PostgreSQL healthy  
@@ -230,6 +251,8 @@ Observed (2026-08-11): TTD = 60 s; TTR = 240 s (manual deactivation; not self-he
 5. Exactly one AI placement active  
 6. Recovery criteria envelope published from baseline  
 7. Telemetry scrape healthy for the experiment window  
+8. Shared RemediationController available; FaultController **not** used as remediation  
+9. `timeout_ms` / `Tmin` / `Tmax` frozen before the run  
 
 ---
 
@@ -242,8 +265,10 @@ Observed (2026-08-11): TTD = 60 s; TTR = 240 s (manual deactivation; not self-he
 | 2A | Fault injector F01 |
 | 2B | Protocol freeze (this document set) |
 | E001 | Fault characterization (**executed** 2026-08-11) |
+| R01 design | Runtime dependency timeout + dual-outcome recovery (2026-08-12); parameterization pending |
 | 3–4 | Embedded / External MAPE-K implementations |
-| 5 | Paired comparative runs |
+| E002 / E003 | Paired containment comparison (R01 fixed) |
+| E004 / E005 | Adaptive timeout; fallback / full recovery |
 | 6 | Statistical analysis |
 
 ---
@@ -253,5 +278,6 @@ Observed (2026-08-11): TTD = 60 s; TTR = 240 s (manual deactivation; not self-he
 - Questions: [`questions.md`](questions.md)  
 - Hypotheses: [`hypotheses.md`](hypotheses.md)  
 - Recovery: [`recovery-criteria.md`](recovery-criteria.md)  
+- Remediation R01: [`remediation-r01.md`](remediation-r01.md)  
 - Fault matrix: [`fault-matrix.md`](fault-matrix.md)  
 - Self-healing metrics (future): [`self-healing-metrics.md`](self-healing-metrics.md)  
