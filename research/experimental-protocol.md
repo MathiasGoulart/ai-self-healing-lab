@@ -94,7 +94,7 @@ E000-R5
 
 Identical configuration for every repetition. Do **not** change workload parameters between runs.
 
-An existing single E000 artifact may be treated as an exploratory run; the repeated series above is required before locking recovery envelopes.
+An existing exploratory `E000/` artifact and R1–R5 exist. **R6–R8 are the primary controlled baseline dataset.** R3–R5 are preserved but classified as potentially confounded (load-generator power-saving). See [`protocol-freeze.md`](protocol-freeze.md) and [`../load-testing/experiments/E000-REPEATS.md`](../load-testing/experiments/E000-REPEATS.md).
 
 ### Per-run recording checklist
 
@@ -185,7 +185,39 @@ Do not draw conclusions from a single run. Exact repetition count may be adjuste
 | Client | k6 | External experience under the controlled workload |
 | System | Prometheus (+ logs/traces) | Internal behavior; required for the external agent |
 
-Grafana annotations (manual for now): `E000-Rn START` / `E000-Rn END`, and later `E00x START` / fault markers / `E00x END`.
+Grafana annotations (manual / dashboard convention): see [`protocol-freeze.md`](protocol-freeze.md) and E001 annotation tags (`E001_START`, `F01_ACTIVATED`, `F01_DEACTIVATED`, `E001_END`).
+
+---
+
+## Health evaluation (frozen)
+
+Primary SLI, degradation, and recovery rules are frozen in:
+
+- [`protocol-freeze.md`](protocol-freeze.md)
+- [`recovery-criteria.md`](recovery-criteria.md)
+
+Summary:
+
+```text
+Primary SLI: order_processing_duration_seconds p95 (Prometheus)
+Window: 30s
+Degraded: 2 of 3 windows with p95 > 500 ms
+Recovered: 2 of 3 windows with p95 < 500 ms
+```
+
+---
+
+## E001 characterization (frozen — EXECUTED)
+
+| Field | Value |
+|-------|-------|
+| Fault | F01 payment_latency / medium / +2000 ms |
+| Workload | 10 iterations/s baseline |
+| AI | None |
+| Purpose | fault → degradation → fault removal → recovery |
+| Results | [`../load-testing/experiments/E001/RESULTS.md`](../load-testing/experiments/E001/RESULTS.md) |
+
+Observed (2026-08-11): TTD = 60 s; TTR = 240 s (manual deactivation; not self-healing).
 
 ---
 
@@ -206,8 +238,10 @@ Grafana annotations (manual for now): `E000-Rn START` / `E000-Rn END`, and later
 | Phase | Protocol relevance |
 |-------|--------------------|
 | 1–1.6 | Subject + metrics + k6 harness + exploratory E000 |
-| Baseline repeats | E000-R1…R5; derive recovery envelope |
-| 2 | Fault injector with timestamped metadata |
+| Baseline repeats | E000-R1…R8; R6–R8 primary controlled baseline |
+| 2A | Fault injector F01 |
+| 2B | Protocol freeze (this document set) |
+| E001 | Fault characterization (**executed** 2026-08-11) |
 | 3–4 | Embedded / External MAPE-K implementations |
 | 5 | Paired comparative runs |
 | 6 | Statistical analysis |

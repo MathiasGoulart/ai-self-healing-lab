@@ -1,0 +1,298 @@
+{
+  "experiment_id": "E000-R4",
+  "scenario": "baseline",
+  "generated_at_utc": "2026-08-11T19:53:44.579Z",
+  "config": {
+    "base_url": "http://127.0.0.1:13000",
+    "rate": 10,
+    "duration": "10m",
+    "pre_allocated_vus": 20,
+    "max_vus": 100,
+    "request_timeout": "10s",
+    "order_service_image": "ghcr.io/mathiasgoulart/ai-self-healing-lab/order-service:sha-fd43433",
+    "payment_service_image": "ghcr.io/mathiasgoulart/ai-self-healing-lab/payment-service:sha-4099043"
+  },
+  "k6_summary": {
+    "root_group": {
+      "path": "",
+      "id": "d41d8cd98f00b204e9800998ecf8427e",
+      "groups": [],
+      "checks": [
+          {
+            "path": "::create status is 201",
+            "id": "2b3e7b963e1efbdd0420a8cd78be7511",
+            "passes": 6000,
+            "fails": 0,
+            "name": "create status is 201"
+          },
+          {
+            "name": "create returns order id",
+            "path": "::create returns order id",
+            "id": "5a3329da27f17b5c3a179137907ca07c",
+            "passes": 6000,
+            "fails": 0
+          },
+          {
+            "id": "7a0966d3c68cb95c5d116a4cd29d6448",
+            "passes": 6000,
+            "fails": 0,
+            "name": "process status is 200",
+            "path": "::process status is 200"
+          },
+          {
+            "name": "process status field is PAID",
+            "path": "::process status field is PAID",
+            "id": "38a8e0307b36f5cdd8dfc514e2c753c4",
+            "passes": 6000,
+            "fails": 0
+          }
+        ],
+      "name": ""
+    },
+    "options": {
+      "summaryTrendStats": [
+        "avg",
+        "min",
+        "med",
+        "max",
+        "p(90)",
+        "p(95)"
+      ],
+      "summaryTimeUnit": "",
+      "noColor": true
+    },
+    "state": {
+      "isStdOutTTY": false,
+      "isStdErrTTY": false,
+      "testRunDurationMs": 599984.974
+    },
+    "metrics": {
+      "http_req_waiting": {
+        "values": {
+          "avg": 48.173426749999976,
+          "min": 11.223,
+          "med": 27.8135,
+          "max": 2882.451,
+          "p(90)": 120.66850000000004,
+          "p(95)": 175.81285
+        },
+        "type": "trend",
+        "contains": "time"
+      },
+      "iterations": {
+        "type": "counter",
+        "contains": "default",
+        "values": {
+          "count": 6000,
+          "rate": 10.000250439605177
+        }
+      },
+      "vus": {
+        "type": "gauge",
+        "contains": "default",
+        "values": {
+          "value": 0,
+          "min": 0,
+          "max": 6
+        }
+      },
+      "data_sent": {
+        "type": "counter",
+        "contains": "data",
+        "values": {
+          "count": 2376000,
+          "rate": 3960.09917408365
+        }
+      },
+      "http_reqs": {
+        "contains": "default",
+        "values": {
+          "count": 12000,
+          "rate": 20.000500879210353
+        },
+        "type": "counter"
+      },
+      "iteration_duration": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "avg": 97.1473713116667,
+          "min": 32.855625,
+          "med": 55.552229499999996,
+          "max": 3247.520958,
+          "p(90)": 246.785125,
+          "p(95)": 320.96973719999977
+        }
+      },
+      "http_req_failed": {
+        "type": "rate",
+        "contains": "default",
+        "values": {
+          "rate": 0,
+          "passes": 0,
+          "fails": 12000
+        }
+      },
+      "vus_max": {
+        "type": "gauge",
+        "contains": "default",
+        "values": {
+          "value": 20,
+          "min": 20,
+          "max": 20
+        }
+      },
+      "http_req_connecting": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "min": 0,
+          "med": 0,
+          "max": 0.443,
+          "p(90)": 0,
+          "p(95)": 0,
+          "avg": 0.0004631666666666666
+        }
+      },
+      "http_req_receiving": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "avg": 0.07959541666666659,
+          "min": 0.011,
+          "med": 0.074,
+          "max": 5.761,
+          "p(90)": 0.131,
+          "p(95)": 0.144
+        }
+      },
+      "http_req_duration{expected_response:true}": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "avg": 48.27870591666671,
+          "min": 11.266,
+          "med": 27.9405,
+          "max": 2882.51,
+          "p(90)": 120.74720000000005,
+          "p(95)": 175.90505
+        }
+      },
+      "checks": {
+        "values": {
+          "rate": 1,
+          "passes": 24000,
+          "fails": 0
+        },
+        "type": "rate",
+        "contains": "default"
+      },
+      "http_req_duration": {
+        "values": {
+          "avg": 48.27870591666671,
+          "min": 11.266,
+          "med": 27.9405,
+          "max": 2882.51,
+          "p(90)": 120.74720000000005,
+          "p(95)": 175.90505
+        },
+        "type": "trend",
+        "contains": "time"
+      },
+      "http_req_tls_handshaking": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "p(95)": 0,
+          "avg": 0,
+          "min": 0,
+          "med": 0,
+          "max": 0,
+          "p(90)": 0
+        }
+      },
+      "order_creation_success": {
+        "type": "counter",
+        "contains": "default",
+        "values": {
+          "count": 6000,
+          "rate": 10.000250439605177
+        }
+      },
+      "order_processing_success": {
+        "type": "counter",
+        "contains": "default",
+        "values": {
+          "count": 6000,
+          "rate": 10.000250439605177
+        }
+      },
+      "order_flow_duration": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "med": 55,
+          "max": 3248,
+          "p(90)": 247,
+          "p(95)": 321.0499999999997,
+          "avg": 97.0835,
+          "min": 33
+        }
+      },
+      "http_req_blocked": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "max": 0.582,
+          "p(90)": 0.011,
+          "p(95)": 0.013,
+          "avg": 0.007519666666666913,
+          "min": 0.001,
+          "med": 0.006
+        }
+      },
+      "data_received": {
+        "type": "counter",
+        "contains": "data",
+        "values": {
+          "count": 6096000,
+          "rate": 10160.254446638859
+        }
+      },
+      "http_req_sending": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "avg": 0.025683749999999467,
+          "min": 0.002,
+          "med": 0.023,
+          "max": 0.939,
+          "p(90)": 0.043,
+          "p(95)": 0.048
+        }
+      }
+    },
+    "setup_data": {
+      "request_timeout": "10s",
+      "max_vus": 100,
+      "order_service_image": "ghcr.io/mathiasgoulart/ai-self-healing-lab/order-service:sha-fd43433",
+      "rate_iterations_per_second": 10,
+      "scenario": "baseline",
+      "timestamp_utc": "2026-08-11T19:43:44.579Z",
+      "base_url": "http://127.0.0.1:13000",
+      "duration": "10m",
+      "experiment_id": "E000-R4",
+      "k6_version": "v1.7.1",
+      "notes": {
+        "no_retries": true,
+        "grafana_annotations": [
+          "E000-R4 START",
+          "E000-R4 END"
+        ],
+        "iteration_meaning": "1 iteration = POST /orders + POST /orders/:id/process (~2 HTTP requests when healthy)"
+      },
+      "payment_service_image": "ghcr.io/mathiasgoulart/ai-self-healing-lab/payment-service:sha-4099043",
+      "pre_allocated_vus": 20
+    }
+  }
+}

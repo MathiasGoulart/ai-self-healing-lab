@@ -1,7 +1,9 @@
 {
   "experiment_id": "E001",
   "name": "Payment Latency — Medium",
-  "status": "defined_not_executed",
+  "status": "executed",
+  "executed_at_utc": "2026-08-11T22:11:47Z",
+  "artifacts_dir": "load-testing/experiments/E001",
   "fault": {
     "id": "F01",
     "name": "payment_latency",
@@ -21,7 +23,41 @@
     "fault_active_minutes": [3, 6],
     "recovery_observation_minutes": [6, 10]
   },
+  "evaluation": {
+    "primary_sli": "order_processing_duration_seconds_p95",
+    "primary_sli_source": "prometheus",
+    "sampling_window_seconds": 30,
+    "degradation": {
+      "rule": "2_of_3_rolling_windows",
+      "condition": "p95_gt_500ms",
+      "transition": "HEALTHY_to_DEGRADED",
+      "evaluation_note": "Every 30s using the three most recent 30s windows (rolling)."
+    },
+    "recovery": {
+      "rule": "2_of_3_rolling_windows",
+      "condition": "p95_lt_500ms",
+      "transition": "DEGRADED_to_HEALTHY",
+      "evaluation_note": "Every 30s using the three most recent 30s windows (rolling)."
+    },
+    "threshold_ms": 500,
+    "threshold_note": "Experimental operational threshold for this study; not a universal latency standard."
+  },
+  "observed": {
+    "t0_utc": "2026-08-11T22:14:47Z",
+    "t1_utc": "2026-08-11T22:15:47Z",
+    "t2": null,
+    "t3_utc": "2026-08-11T22:18:47Z",
+    "ttd_seconds": 60,
+    "ttr_seconds": 240,
+    "ttr_note": "Observed recovery after manual fault deactivation; not self-healing",
+    "final_state": "HEALTHY"
+  },
+  "images": {
+    "order_service": "ghcr.io/mathiasgoulart/ai-self-healing-lab/order-service:sha-fd43433",
+    "payment_service": "ghcr.io/mathiasgoulart/ai-self-healing-lab/payment-service:sha-4099043"
+  },
   "ai_placement": null,
   "self_healing": false,
-  "notes": "Formal E001 execution is deferred until after Phase 2A smoke validation review."
+  "annotations": ["E001_START", "F01_ACTIVATED", "F01_DEACTIVATED", "E001_END"],
+  "notes": "Fault characterization only. Formal E001 executed 2026-08-11 under controlled load-generator conditions (AC + caffeinate)."
 }

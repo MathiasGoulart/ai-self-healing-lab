@@ -1,0 +1,314 @@
+{
+  "experiment_id": "E000-R6",
+  "scenario": "baseline",
+  "generated_at_utc": "2026-08-11T20:32:33.826Z",
+  "config": {
+    "base_url": "http://127.0.0.1:13000",
+    "rate": 10,
+    "duration": "10m",
+    "pre_allocated_vus": 20,
+    "max_vus": 100,
+    "request_timeout": "10s",
+    "order_service_image": "ghcr.io/mathiasgoulart/ai-self-healing-lab/order-service:sha-fd43433",
+    "payment_service_image": "ghcr.io/mathiasgoulart/ai-self-healing-lab/payment-service:sha-4099043"
+  },
+  "load_generator": {
+    "platform": "macOS",
+    "version": "26.6.1",
+    "architecture": "arm64",
+    "cpu": "Apple M4",
+    "memory_gb": 32,
+    "k6_version": "v1.7.1",
+    "power_source": "AC",
+    "lowpowermode": "0",
+    "sleep_prevention": "caffeinate",
+    "notes": [
+      "Fields limited to values verified at run start.",
+      "Closing of background apps is a manual operator step (not programmatically verified).",
+      "System powernap setting is not modified by this runner; sleep is prevented via caffeinate when sleep_prevention=caffeinate."
+    ]
+  },
+  "k6_summary": {
+    "root_group": {
+      "name": "",
+      "path": "",
+      "id": "d41d8cd98f00b204e9800998ecf8427e",
+      "groups": [],
+      "checks": [
+          {
+            "fails": 0,
+            "name": "create status is 201",
+            "path": "::create status is 201",
+            "id": "2b3e7b963e1efbdd0420a8cd78be7511",
+            "passes": 6001
+          },
+          {
+            "name": "create returns order id",
+            "path": "::create returns order id",
+            "id": "5a3329da27f17b5c3a179137907ca07c",
+            "passes": 6001,
+            "fails": 0
+          },
+          {
+            "fails": 0,
+            "name": "process status is 200",
+            "path": "::process status is 200",
+            "id": "7a0966d3c68cb95c5d116a4cd29d6448",
+            "passes": 6001
+          },
+          {
+            "name": "process status field is PAID",
+            "path": "::process status field is PAID",
+            "id": "38a8e0307b36f5cdd8dfc514e2c753c4",
+            "passes": 6001,
+            "fails": 0
+          }
+        ]
+    },
+    "options": {
+      "summaryTrendStats": [
+        "avg",
+        "min",
+        "med",
+        "max",
+        "p(90)",
+        "p(95)"
+      ],
+      "summaryTimeUnit": "",
+      "noColor": true
+    },
+    "state": {
+      "isStdOutTTY": false,
+      "isStdErrTTY": false,
+      "testRunDurationMs": 600040.951
+    },
+    "metrics": {
+      "data_sent": {
+        "type": "counter",
+        "contains": "data",
+        "values": {
+          "count": 2376396,
+          "rate": 3960.389696802544
+        }
+      },
+      "http_req_connecting": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "min": 0,
+          "med": 0,
+          "max": 0.493,
+          "p(90)": 0,
+          "p(95)": 0,
+          "avg": 0.0004492584569238461
+        }
+      },
+      "vus_max": {
+        "type": "gauge",
+        "contains": "default",
+        "values": {
+          "value": 20,
+          "min": 20,
+          "max": 20
+        }
+      },
+      "checks": {
+        "type": "rate",
+        "contains": "default",
+        "values": {
+          "passes": 24004,
+          "fails": 0,
+          "rate": 1
+        }
+      },
+      "order_processing_success": {
+        "type": "counter",
+        "contains": "default",
+        "values": {
+          "count": 6001,
+          "rate": 10.000984082834707
+        }
+      },
+      "http_req_waiting": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "p(95)": 168.93294999999972,
+          "avg": 51.782387852024804,
+          "min": 11.102,
+          "med": 28.625500000000002,
+          "max": 2626.591,
+          "p(90)": 120.96610000000001
+        }
+      },
+      "data_received": {
+        "contains": "data",
+        "values": {
+          "count": 6097016,
+          "rate": 10160.999828160062
+        },
+        "type": "counter"
+      },
+      "vus": {
+        "contains": "default",
+        "values": {
+          "value": 1,
+          "min": 1,
+          "max": 8
+        },
+        "type": "gauge"
+      },
+      "http_req_blocked": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "max": 0.578,
+          "p(90)": 0.01,
+          "p(95)": 0.011,
+          "avg": 0.007881269788368898,
+          "min": 0,
+          "med": 0.007
+        }
+      },
+      "order_flow_duration": {
+        "values": {
+          "max": 2975,
+          "p(90)": 234,
+          "p(95)": 300,
+          "avg": 104.37927012164639,
+          "min": 33,
+          "med": 58
+        },
+        "type": "trend",
+        "contains": "time"
+      },
+      "iterations": {
+        "values": {
+          "count": 6001,
+          "rate": 10.000984082834707
+        },
+        "type": "counter",
+        "contains": "default"
+      },
+      "http_reqs": {
+        "contains": "default",
+        "values": {
+          "count": 12002,
+          "rate": 20.001968165669414
+        },
+        "type": "counter"
+      },
+      "http_req_duration{expected_response:true}": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "avg": 51.89865589068477,
+          "min": 11.21,
+          "med": 28.712,
+          "max": 2626.686,
+          "p(90)": 121.0755,
+          "p(95)": 169.00039999999981
+        }
+      },
+      "http_req_duration": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "avg": 51.89865589068477,
+          "min": 11.21,
+          "med": 28.712,
+          "max": 2626.686,
+          "p(90)": 121.0755,
+          "p(95)": 169.00039999999981
+        }
+      },
+      "http_req_sending": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "avg": 0.027980503249457653,
+          "min": 0.004,
+          "med": 0.025,
+          "max": 1.013,
+          "p(90)": 0.04,
+          "p(95)": 0.046
+        }
+      },
+      "iteration_duration": {
+        "contains": "time",
+        "values": {
+          "min": 32.81325,
+          "med": 58.137208,
+          "max": 2974.738666,
+          "p(90)": 234.368084,
+          "p(95)": 300.297333,
+          "avg": 104.43129150191668
+        },
+        "type": "trend"
+      },
+      "order_creation_success": {
+        "type": "counter",
+        "contains": "default",
+        "values": {
+          "count": 6001,
+          "rate": 10.000984082834707
+        }
+      },
+      "http_req_receiving": {
+        "type": "trend",
+        "contains": "time",
+        "values": {
+          "avg": 0.08828753541076462,
+          "min": 0.013,
+          "med": 0.082,
+          "max": 12.373,
+          "p(90)": 0.112,
+          "p(95)": 0.131
+        }
+      },
+      "http_req_tls_handshaking": {
+        "contains": "time",
+        "values": {
+          "med": 0,
+          "max": 0,
+          "p(90)": 0,
+          "p(95)": 0,
+          "avg": 0,
+          "min": 0
+        },
+        "type": "trend"
+      },
+      "http_req_failed": {
+        "values": {
+          "fails": 12002,
+          "rate": 0,
+          "passes": 0
+        },
+        "type": "rate",
+        "contains": "default"
+      }
+    },
+    "setup_data": {
+      "k6_version": "v1.7.1",
+      "max_vus": 100,
+      "payment_service_image": "ghcr.io/mathiasgoulart/ai-self-healing-lab/payment-service:sha-4099043",
+      "pre_allocated_vus": 20,
+      "duration": "10m",
+      "notes": {
+        "grafana_annotations": [
+          "E000-R6 START",
+          "E000-R6 END"
+        ],
+        "iteration_meaning": "1 iteration = POST /orders + POST /orders/:id/process (~2 HTTP requests when healthy)",
+        "no_retries": true
+      },
+      "order_service_image": "ghcr.io/mathiasgoulart/ai-self-healing-lab/order-service:sha-fd43433",
+      "rate_iterations_per_second": 10,
+      "request_timeout": "10s",
+      "scenario": "baseline",
+      "timestamp_utc": "2026-08-11T20:22:33.775Z",
+      "base_url": "http://127.0.0.1:13000",
+      "experiment_id": "E000-R6"
+    }
+  }
+}

@@ -75,5 +75,6 @@ application/order-service/payment-service/src/main.ts
 
 ## Experiments
 
-- Definition (not executed in Phase 2A): [`../experiments/E001/`](../experiments/E001/)
+- Definition + results: [`../experiments/E001/`](../experiments/E001/)  
+- Run artifacts: [`../load-testing/experiments/E001/`](../load-testing/experiments/E001/)  
 - Protocol: [`../research/fault-matrix.md`](../research/fault-matrix.md)

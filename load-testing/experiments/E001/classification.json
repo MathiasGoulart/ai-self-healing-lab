@@ -1,0 +1,7 @@
+{
+  "experiment_id": "E001",
+  "classification": "VALID",
+  "power_state": "controlled",
+  "self_healing": false,
+  "notes": "Formal fault-characterization run under AC power with caffeinate. F01 medium (+2000ms) activated at T0 and manually deactivated. Primary SLI evaluation uses rolling 2-of-3 30s windows on Prometheus order_processing_duration_seconds p95. TTR is observed recovery after manual deactivation, not self-healing."
+}

@@ -1,0 +1,239 @@
+{
+  "query": "histogram_quantile(0.95,sum by (le) (rate(order_processing_duration_seconds_bucket{job=\"order-service\"}[30s])))",
+  "step_seconds": 30,
+  "start_epoch": 1786486307,
+  "end_epoch": 1786486908,
+  "windows": [
+    {
+      "epoch": 1786486307,
+      "utc": "2026-08-11T22:11:47Z",
+      "p95_seconds": null,
+      "p95_ms": null,
+      "above_500ms": null,
+      "below_500ms": null,
+      "phase": "baseline",
+      "offset_from_start_sec": 0,
+      "offset_from_t0_sec": -180
+    },
+    {
+      "epoch": 1786486337,
+      "utc": "2026-08-11T22:12:17Z",
+      "p95_seconds": 0.10964285714285694,
+      "p95_ms": 109.643,
+      "above_500ms": false,
+      "below_500ms": true,
+      "phase": "baseline",
+      "offset_from_start_sec": 30,
+      "offset_from_t0_sec": -150
+    },
+    {
+      "epoch": 1786486367,
+      "utc": "2026-08-11T22:12:47Z",
+      "p95_seconds": 0.062499999999999944,
+      "p95_ms": 62.5,
+      "above_500ms": false,
+      "below_500ms": true,
+      "phase": "baseline",
+      "offset_from_start_sec": 60,
+      "offset_from_t0_sec": -120
+    },
+    {
+      "epoch": 1786486397,
+      "utc": "2026-08-11T22:13:17Z",
+      "p95_seconds": 0.20562499999999978,
+      "p95_ms": 205.625,
+      "above_500ms": false,
+      "below_500ms": true,
+      "phase": "baseline",
+      "offset_from_start_sec": 90,
+      "offset_from_t0_sec": -90
+    },
+    {
+      "epoch": 1786486427,
+      "utc": "2026-08-11T22:13:47Z",
+      "p95_seconds": 0.04985507246376812,
+      "p95_ms": 49.855,
+      "above_500ms": false,
+      "below_500ms": true,
+      "phase": "baseline",
+      "offset_from_start_sec": 120,
+      "offset_from_t0_sec": -60
+    },
+    {
+      "epoch": 1786486457,
+      "utc": "2026-08-11T22:14:17Z",
+      "p95_seconds": 0.049281690140845075,
+      "p95_ms": 49.282,
+      "above_500ms": false,
+      "below_500ms": true,
+      "phase": "baseline",
+      "offset_from_start_sec": 150,
+      "offset_from_t0_sec": -30
+    },
+    {
+      "epoch": 1786486487,
+      "utc": "2026-08-11T22:14:47Z",
+      "p95_seconds": 0.08750000000000006,
+      "p95_ms": 87.5,
+      "above_500ms": false,
+      "below_500ms": true,
+      "phase": "fault",
+      "offset_from_start_sec": 180,
+      "offset_from_t0_sec": 0
+    },
+    {
+      "epoch": 1786486517,
+      "utc": "2026-08-11T22:15:17Z",
+      "p95_seconds": 2.425,
+      "p95_ms": 2425.0,
+      "above_500ms": true,
+      "below_500ms": false,
+      "phase": "fault",
+      "offset_from_start_sec": 210,
+      "offset_from_t0_sec": 30
+    },
+    {
+      "epoch": 1786486547,
+      "utc": "2026-08-11T22:15:47Z",
+      "p95_seconds": 2.425,
+      "p95_ms": 2425.0,
+      "above_500ms": true,
+      "below_500ms": false,
+      "phase": "fault",
+      "offset_from_start_sec": 240,
+      "offset_from_t0_sec": 60
+    },
+    {
+      "epoch": 1786486577,
+      "utc": "2026-08-11T22:16:17Z",
+      "p95_seconds": 2.425,
+      "p95_ms": 2425.0,
+      "above_500ms": true,
+      "below_500ms": false,
+      "phase": "fault",
+      "offset_from_start_sec": 270,
+      "offset_from_t0_sec": 90
+    },
+    {
+      "epoch": 1786486607,
+      "utc": "2026-08-11T22:16:47Z",
+      "p95_seconds": 2.425,
+      "p95_ms": 2425.0,
+      "above_500ms": true,
+      "below_500ms": false,
+      "phase": "fault",
+      "offset_from_start_sec": 300,
+      "offset_from_t0_sec": 120
+    },
+    {
+      "epoch": 1786486637,
+      "utc": "2026-08-11T22:17:17Z",
+      "p95_seconds": 2.425,
+      "p95_ms": 2425.0,
+      "above_500ms": true,
+      "below_500ms": false,
+      "phase": "fault",
+      "offset_from_start_sec": 330,
+      "offset_from_t0_sec": 150
+    },
+    {
+      "epoch": 1786486667,
+      "utc": "2026-08-11T22:17:47Z",
+      "p95_seconds": 2.425,
+      "p95_ms": 2425.0,
+      "above_500ms": true,
+      "below_500ms": false,
+      "phase": "recovery",
+      "offset_from_start_sec": 360,
+      "offset_from_t0_sec": 180
+    },
+    {
+      "epoch": 1786486697,
+      "utc": "2026-08-11T22:18:17Z",
+      "p95_seconds": 0.07500000000000001,
+      "p95_ms": 75.0,
+      "above_500ms": false,
+      "below_500ms": true,
+      "phase": "recovery",
+      "offset_from_start_sec": 390,
+      "offset_from_t0_sec": 210
+    },
+    {
+      "epoch": 1786486727,
+      "utc": "2026-08-11T22:18:47Z",
+      "p95_seconds": 0.0806249999999999,
+      "p95_ms": 80.625,
+      "above_500ms": false,
+      "below_500ms": true,
+      "phase": "recovery",
+      "offset_from_start_sec": 420,
+      "offset_from_t0_sec": 240
+    },
+    {
+      "epoch": 1786486757,
+      "utc": "2026-08-11T22:19:17Z",
+      "p95_seconds": 0.1281249999999999,
+      "p95_ms": 128.125,
+      "above_500ms": false,
+      "below_500ms": true,
+      "phase": "recovery",
+      "offset_from_start_sec": 450,
+      "offset_from_t0_sec": 270
+    },
+    {
+      "epoch": 1786486787,
+      "utc": "2026-08-11T22:19:47Z",
+      "p95_seconds": 0.04985401459854015,
+      "p95_ms": 49.854,
+      "above_500ms": false,
+      "below_500ms": true,
+      "phase": "recovery",
+      "offset_from_start_sec": 480,
+      "offset_from_t0_sec": 300
+    },
+    {
+      "epoch": 1786486817,
+      "utc": "2026-08-11T22:20:17Z",
+      "p95_seconds": 0.049857142857142864,
+      "p95_ms": 49.857,
+      "above_500ms": false,
+      "below_500ms": true,
+      "phase": "recovery",
+      "offset_from_start_sec": 510,
+      "offset_from_t0_sec": 330
+    },
+    {
+      "epoch": 1786486847,
+      "utc": "2026-08-11T22:20:47Z",
+      "p95_seconds": 0.07535714285714282,
+      "p95_ms": 75.357,
+      "above_500ms": false,
+      "below_500ms": true,
+      "phase": "recovery",
+      "offset_from_start_sec": 540,
+      "offset_from_t0_sec": 360
+    },
+    {
+      "epoch": 1786486877,
+      "utc": "2026-08-11T22:21:17Z",
+      "p95_seconds": 0.10937499999999997,
+      "p95_ms": 109.375,
+      "above_500ms": false,
+      "below_500ms": true,
+      "phase": "recovery",
+      "offset_from_start_sec": 570,
+      "offset_from_t0_sec": 390
+    },
+    {
+      "epoch": 1786486907,
+      "utc": "2026-08-11T22:21:47Z",
+      "p95_seconds": 0.0750000000000001,
+      "p95_ms": 75.0,
+      "above_500ms": false,
+      "below_500ms": true,
+      "phase": "recovery",
+      "offset_from_start_sec": 600,
+      "offset_from_t0_sec": 420
+    }
+  ]
+}

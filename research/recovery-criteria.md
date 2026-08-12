@@ -1,105 +1,95 @@
 # Recovery Criteria
 
-**Document type:** Experimental protocol framework  
-**Status:** Framework defined — **numeric thresholds not fixed yet**
+**Document type:** Experimental protocol (frozen for E001+)  
+**Status:** **Frozen** — see also [`protocol-freeze.md`](protocol-freeze.md)
 
 ---
 
-## Principle
+## Primary SLI
 
-Recovery is declared only when the system returns to a **defined healthy operating envelope** derived from baseline measurements — not when an AI action is issued, and not by subjective dashboard inspection.
+Authoritative degradation / recovery signal:
 
 ```text
-baseline distribution
-        ↓
-acceptable operating envelope
-        ↓
-recovery criteria (+ recovery window)
+order-service order-processing latency p95
 ```
 
----
-
-## Candidate observable signals
-
-SLO-like signals suitable for recovery evaluation:
-
-| Signal | Perspective |
-|--------|-------------|
-| HTTP error rate | Client (k6) and/or system (Prometheus) |
-| HTTP p95 latency | Client and/or system |
-| Business-flow success rate | Client (k6 checks / iteration success) |
-| Order processing success rate | System (`orders_processing_total` outcomes) |
-
-Additional candidates (as needed per fault class):
-
-- Payment request failure rate
-- Database pool waiting / saturation indicators
-- Event-loop delay relative to baseline
-
-Which signal set is **primary** for a given fault will be specified in that experiment’s protocol entry (one primary set per fault family when possible).
+Prometheus metric: `order_processing_duration_seconds`  
+Client-side k6 metrics are **not** the authoritative health state.
 
 ---
 
-## Recovery window
-
-A future experiment defines a recovery window, for example:
+## State machine
 
 ```text
-N consecutive seconds
+HEALTHY
+   |
+   | 2 of 3 × 30s windows with p95 > 500 ms
+   v
+DEGRADED
+   |
+   | 2 of 3 × 30s windows with p95 < 500 ms
+   v
+HEALTHY
 ```
 
-during which **all** required criteria remain satisfied.
+### Meaning of “2 of 3”
 
-Example shape (thresholds TBD):
+Evaluation is performed every 30 seconds using a rolling set of the three most recent 30-second windows.
 
-```text
-Recovery at time t  iff  for all τ ∈ [t − N, t]:
-  error_rate(τ)     ≤  E_max
-  http_p95(τ)       ≤  L_max
-  flow_success(τ)   ≥  S_min
-```
-
-`N`, `E_max`, `L_max`, and `S_min` are **not hard-coded here**.
+So `{W1, W2, W3}` is one evaluation; `{W2, W3, W4}` is the next. See [`protocol-freeze.md`](protocol-freeze.md).
 
 ---
 
-## Deriving thresholds from baseline
+## Degradation rule
 
-1. Run repeated no-fault baselines (E000-R1 … E000-R5+) under identical workload ([`experimental-protocol.md`](experimental-protocol.md)).
-2. Characterize distributions (mean, median, sd, p50, p95, p99, min, max) for candidate signals.
-3. Define an **acceptable operating envelope** (e.g. within a chosen multiple of baseline variability, or below a chosen percentile bound).
-4. Publish the envelope and recovery window in the experiment family documentation **before** comparative fault runs that depend on them.
-5. Keep the same envelope when comparing Embedded vs External for that fault.
-
-Changing thresholds mid-comparison invalidates the paired design.
-
----
-
-## Recovery success vs failure
-
-| Outcome | Condition |
-|---------|-----------|
-| **Success** | Criteria satisfied for the full recovery window, before the experiment’s recovery deadline |
-| **Failure** | Deadline elapses without sustained criteria satisfaction |
-| **Invalid run** | Fault injection metadata missing, workload misconfigured, or infrastructure confound |
-
-TTR uses the timestamp when the recovery window is first completed ([`metrics.md`](metrics.md#time-to-recovery--ttr)).
+| Parameter | Value |
+|-----------|-------|
+| Sampling window | 30 seconds |
+| Condition | order-processing p95 **>** 500 ms |
+| Evaluation | **2 of 3** consecutive windows |
+| Effect | HEALTHY → DEGRADED |
 
 ---
 
-## What is explicitly invalid
+## Recovery rule
+
+| Parameter | Value |
+|-----------|-------|
+| Sampling window | 30 seconds |
+| Condition | order-processing p95 **<** 500 ms |
+| Evaluation | **2 of 3** consecutive windows |
+| Effect | DEGRADED → HEALTHY |
+
+A single datapoint or single window below 500 ms does **not** establish recovery.
+
+---
+
+## Threshold wording
+
+> 500 ms is an experimental operational threshold selected for this study based on the observed E000 baseline and the need to distinguish normal latency variation from the F01-induced degradation.
+
+Not a universal backend latency standard.
+
+---
+
+## Why p95 + M-of-N
+
+E000 observed naturally occurring tail-latency spikes (occasional multi-second maxima). The protocol therefore uses **p95** with **2-of-3** windows rather than reacting to isolated spikes.
+
+---
+
+## Invalid criteria
 
 - “The graph looks normal”
 - “The agent said it recovered”
-- “We executed a remediation action”
-- Thresholds invented without baseline evidence
+- “We executed a remediation action” (action ≠ recovery)
+- Using k6-only latency as authoritative operational health
 
 ---
 
-## Status relative to current lab state
+## Controlled baseline reference
 
-| Item | Status |
-|------|--------|
-| E000 single run | Initial exploratory baseline artifact exists |
-| Repeated E000-R1…R5 | **Required** before locking recovery thresholds |
-| Final `E_max` / `L_max` / `S_min` / `N` | **Deferred** until baseline statistics are available |
+Primary controlled baseline dataset: **E000-R6 / R7 / R8**  
+(R3–R5 potentially confounded by load-generator power-saving; preserved but not primary.)
+
+Details: [`../load-testing/experiments/E000-REPEATS.md`](../load-testing/experiments/E000-REPEATS.md)
